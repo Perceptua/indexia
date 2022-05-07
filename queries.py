@@ -2,7 +2,7 @@
 """
 Created on Sat Apr 30 09:50:00 2022
 
-@author: aherk
+@author: aphorikles
 """
 
 class querystore:
@@ -26,7 +26,7 @@ class querystore:
         '''
         columns = [f'{col} {dtype}' for col, dtype in columns.items()]
         columns = ','.join(columns)
-        create = f'CREATE TABLE {tablename}'
+        create = f'CREATE TABLE IF NOT EXISTS {tablename}'
         create = f'{create} ({columns})'
         
         return create
@@ -50,14 +50,17 @@ class querystore:
             A formatted SQL INSERT statement.
 
         '''
-        values = ','.join([f"{v}" for v in values])
+        values = ','.join(
+            '(' + ','.join(f"'{v[i]}'" for i,_ in enumerate(v)) + ')' 
+            for v in values
+        )
         columns = f" ({','.join(columns)})" if columns else ''
         insert = f'INSERT INTO {tablename}{columns}'
         insert = f'{insert} VALUES {values}'
         
         return insert
     
-    def select(tablename, columns, conditions):
+    def select(tablename, columns, conditions=''):
         '''
         GET a SQL SELECT statement.
 
@@ -80,4 +83,28 @@ class querystore:
         select = f'SELECT {columns} FROM {tablename} {conditions}'
         
         return select
+    
+    def where(cols, vals):
+        '''
+        Construct WHERE condition from columns & values
+
+        Parameters
+        ----------
+        cols : list(str)
+            List of column names.
+        vals : list(any)
+            List of values.
+
+        Returns
+        -------
+        conditions : str
+            A SQL-formatted WHERE condition.
+
+        '''
+        where = f"WHERE {cols[0]} = '{vals[0]}' "
+        where += ' '.join([
+            f"AND {cols[i]} = '{vals[i]}'" for i in range(1,len(cols))
+        ])
+        
+        return where
             

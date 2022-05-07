@@ -2,7 +2,7 @@
 """
 Created on Sat Apr 30 10:06:15 2022
 
-@author: aherk
+@author: aphorikles
 """
 
 from queries import querystore
@@ -18,12 +18,12 @@ class TestQuerystore(ut.TestCase):
         
     def testCreate(self):
         statement = querystore.create(self.tablename, self.columns)
-        expected = 'CREATE TABLE users (uid INT PRIMARY KEY,username VARCHAR(28))'
+        expected = 'CREATE TABLE IF NOT EXISTS users (uid INT PRIMARY KEY,username VARCHAR(28))'
         self.assertEqual(statement, expected)
         
     def testInsert(self):        
         statement = querystore.insert(self.tablename, [(i, f'user{i}') for i in range(1,4)])
-        expected = "INSERT INTO users VALUES (1, 'user1'),(2, 'user2'),(3, 'user3')"
+        expected = "INSERT INTO users VALUES ('1','user1'),('2','user2'),('3','user3')"
         self.assertEqual(statement, expected)
         
     def testSelect(self):
