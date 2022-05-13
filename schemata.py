@@ -12,11 +12,17 @@ class tabula:
                 'scribe_id': 'INTEGER PRIMARY KEY AUTOINCREMENT',
                 'pseudonym': 'VARCHAR(28) UNIQUE NOT NULL',
             },
+            'libraries': {
+                'library_id': 'INTEGER PRIMARY KEY AUTOINCREMENT',
+                'libronym': 'VARCHAR(56) NOT NULL',
+                'scribe_id': 'INTEGER NOT NULL',
+                'FOREIGN KEY (scribe_id)': self.references('scribes', 'scribe_id'),
+            },
             'indices': {
                 'index_id': 'INTEGER PRIMARY KEY AUTOINCREMENT',
                 'indexonym': 'VARCHAR(56) NOT NULL',
-                'scribe_id': 'INTEGER NOT NULL',
-                'FOREIGN KEY (scribe_id)': self.references('scribes', 'scribe_id'),
+                'library_id': 'INTEGER NOT NULL',
+                'FOREIGN KEY (library_id)': self.references('libraries', 'library_id'),
             },
             'index': {
                 'card_id': 'INTEGER PRIMARY KEY AUTOINCREMENT',

@@ -121,17 +121,29 @@ class indexia:
         
         return scribe
     
-    def add_index(self, cnxn, indexonym, scribe_id):
+    def add_library(self, cnxn, libronym, scribe):
+        dtype = self.tabula.columns['libraries']
+        (scribe_id, pseudonym) = scribe.loc[0]
+        
+        library = self.get_or_create(cnxn, 'libraries', dtype, 
+                                     ['libronym', 'scribe_id'], 
+                                     [libronym, scribe_id])
+        
+        return library
+    
+    def add_index(self, cnxn, indexonym, library):
         dtype = self.tabula.columns['indices']
+        (library_id, libronym, _) = library.loc[0]
+        
         index = self.get_or_create(cnxn, 'indices', dtype, 
-                                   ['indexonym', 'scribe_id'], 
-                                   [indexonym, scribe_id])
+                                   ['indexonym', 'library_id'], 
+                                   [indexonym, library_id])
         
         return index
     
     def add_card(self, cnxn, index, created=None):
         dtype = self.tabula.columns['index']      
-        (index_id, indexonym, _) = index
+        (index_id, indexonym, _) = index.loc[0]
         
         if not created:
             created = terminal.ask_created()
@@ -142,8 +154,11 @@ class indexia:
         
         return card
     
-    def add_logonym(self, cnxn, logonym, indexonym, card_id):
+    def add_logonym(self, cnxn, logonym, index, card):
         dtype = self.tabula.columns['logonyms']
+        (index_id, indexonym, _) = index.loc[0]
+        (card_id, created, _) = card.loc[0]
+        
         f_key = 'FOREIGN KEY (card_id)'
         dtype[f_key] = dtype[f_key].format(indexonym=indexonym)
         logonym = self.get_or_create(cnxn, 'logonyms', dtype, 
@@ -187,10 +202,3 @@ if __name__ == '__main__':
         (scribe_id, pseudonym) = scribe.loc[0]
         print(f'welcome, {pseudonym}.')
         
-        indexonym = terminal.ask_name('indexonym')
-        index = ix.add_index(cnxn, indexonym, scribe_id).loc[0]
-        ix.cards_in_index(cnxn, indexonym)
-        
-        card = ix.add_card(cnxn, index).loc[0]
-        
-        logonyms = ix.add_logonyms(cnxn, indexonym, card.card_id)
