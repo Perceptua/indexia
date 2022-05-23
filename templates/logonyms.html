@@ -1,0 +1,20 @@
+<a href="/{{ pseudonym }}", style="text-decoration:none"><pre>{{ title }}</pre></a>
+
+<p><b>wandering <a href="/{{ pseudonym }}/{{libronym }}">{{ libronym }}</a></b></p>
+
+{% if logonyms %}
+  <p><b>logonyms for card {{ created }}</b></p>
+  <ul>
+    {% for logonym in logonyms %}
+      <li>{{ logonym }} [remove]</li>
+    {% endfor %}
+  </ul>
+{% endif %}
+
+<p><b>add logonyms</b></p>
+<form class="" action="/{{ pseudonym }}/{{ libronym }}/{{ created }}" method="post">
+  <input type="hidden" name="created" value="{{ created }}">
+  <label for="logonyms">enter logonyms separated by a space</label><br>
+  <input type="text" name="logonyms" value=""><br>
+  <input type="submit" value="add to card">
+</form>

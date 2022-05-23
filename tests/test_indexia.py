@@ -22,19 +22,18 @@ class TestIndexia(ut.TestCase):
             cnxn = ix.open_cnxn(ix.db)
             scribe = ix.add_scribe(cnxn, self.test)
             library = ix.add_library(cnxn, self.test, scribe)
-            index = ix.add_index(cnxn, self.test, library)
-            card = ix.add_card(cnxn, index, created=created)
-            logonym = ix.add_logonym(cnxn, self.test, index, card)
+            card = ix.add_card(cnxn, library, created=created)
+            logonym = ix.add_logonym(cnxn, self.test, library, card)
         
         (scribe_id, pseudonym) = scribe.loc[0]
-        (index_id, indexonym, scribe_id_index) = index.loc[0]
-        (card_id, created_card, index_id_card) = card.loc[0]
+        (library_id, libronym, scribe_id_library) = library.loc[0]
+        (card_id, created_card, library_id_card) = card.loc[0]
         (logonym, card_id_logonym) = logonym.loc[0]
         
         self.assertEqual(pseudonym, self.test)
-        self.assertEqual(scribe_id, scribe_id_index)
-        self.assertEqual(indexonym, self.test)
-        self.assertEqual(index_id, index_id_card)
+        self.assertEqual(scribe_id, scribe_id_library)
+        self.assertEqual(libronym, self.test)
+        self.assertEqual(library_id, library_id_card)
         self.assertEqual(created, created_card)
         self.assertEqual(card_id, card_id_logonym)
         self.assertEqual(logonym, self.test)

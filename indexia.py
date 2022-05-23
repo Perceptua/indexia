@@ -115,6 +115,7 @@ class indexia:
     
     def add_scribe(self, cnxn, pseudonym):
         dtype = self.tabula.columns['scribes']
+        
         scribe = self.get_or_create(cnxn, 'scribes', dtype, 
                                     ['pseudonym'],
                                     [pseudonym])
@@ -131,74 +132,82 @@ class indexia:
         
         return library
     
-    def add_index(self, cnxn, indexonym, library):
-        dtype = self.tabula.columns['indices']
+    def add_card(self, cnxn, library, created):
+        dtype = self.tabula.columns['cards']      
         (library_id, libronym, _) = library.loc[0]
         
-        index = self.get_or_create(cnxn, 'indices', dtype, 
-                                   ['indexonym', 'library_id'], 
-                                   [indexonym, library_id])
-        
-        return index
-    
-    def add_card(self, cnxn, index, created=None):
-        dtype = self.tabula.columns['index']      
-        (index_id, indexonym, _) = index.loc[0]
-        
-        if not created:
-            created = terminal.ask_created()
-        
-        card = self.get_or_create(cnxn, indexonym, dtype,
-                                  ['created', 'index_id'],
-                                  [created, index_id])
+        card = self.get_or_create(cnxn, libronym, dtype,
+                                  ['created', 'library_id'],
+                                  [created, library_id])
         
         return card
     
-    def add_logonym(self, cnxn, logonym, index, card):
+    def add_logonym(self, cnxn, logonym, library, card):
         dtype = self.tabula.columns['logonyms']
-        (index_id, indexonym, _) = index.loc[0]
+        (library_id, libronym, _) = library.loc[0]
         (card_id, created, _) = card.loc[0]
-        
         f_key = 'FOREIGN KEY (card_id)'
-        dtype[f_key] = dtype[f_key].format(indexonym=indexonym)
+        dtype[f_key] = dtype[f_key].format(libronym=libronym)
+        
         logonym = self.get_or_create(cnxn, 'logonyms', dtype, 
                                      ['logonym', 'card_id'], 
                                      [logonym, card_id])
         
         return logonym
     
-    def add_logonyms(self, cnxn, indexonym, card_id, logonyms=pd.DataFrame()):
+    def add_logonyms(self, cnxn, library, card, logonyms=pd.DataFrame()):
         logonym = terminal.ask_name('logonym')
-        logonym = self.add_logonym(cnxn, logonym, indexonym, card_id)
+        logonym = self.add_logonym(cnxn, logonym, library, card)
         logonyms = logonym if logonyms.empty else pd.concat([logonyms, logonym])
-        self.cards_with_logonym(cnxn, logonym.loc[0, 'logonym'])
         add_more = terminal.ask_yes_no('add another logonym?')
         
         if add_more:
-            return self.add_logonyms(cnxn, indexonym, card_id, logonyms)
+            return self.add_logonyms(cnxn, library, card, logonyms)
         else:
             return logonyms
         
-    def cards_in_index(self, cnxn, indexonym):
-        select = querystore.select(indexonym, ['COUNT(card_id)'])
-        cards = pd.read_sql(select, cnxn)
-        print(f'{cards.shape[0]} cards in index {indexonym}.')
-    
-    def cards_with_logonym(self, cnxn, logonym):
-        where = querystore.where(['logonym'], [logonym])
-        select = querystore.select('logonyms', ['DISTINCT card_id'], where)
-        cards = pd.read_sql(select, cnxn)
-        print(f'{cards.shape[0]} cards have logonym {logonym}.')
+    def get_libraries(self, cnxn, scribe):
+        (scribe_id, pseudonym) = scribe.loc[0]
+        where = querystore.where(['scribe_id'], [scribe_id])
+        select = querystore.select('libraries', ['*'], where)
+        
+        try:
+            libraries = pd.read_sql(select, cnxn)
+        except:
+            libraries = pd.DataFrame()
+        
+        return libraries
+        
+    def get_cards(self, cnxn, library):
+        (library_id, libronym, _) = library.loc[0]
+        select = querystore.select(libronym, ['*'])
+        
+        try:
+            cards = pd.read_sql(select, cnxn).sort_values(by='created')
+        except:
+            cards = pd.DataFrame()
         
         return cards
+    
+    def get_logonyms(self, cnxn, card):
+        (card_id, created, _) = card.loc[0]
+        where = querystore.where(['card_id'], [card_id])
+        select = querystore.select('logonyms', ['*'], where)
+        
+        try:
+            logonyms = pd.read_sql(select, cnxn)
+        except:
+            logonyms = pd.DataFrame()
+        
+        return logonyms
         
 if __name__ == '__main__':
     with indexia() as ix:
-        terminal.print_file_contents('data/indexia_lower.txt')
+        print(terminal.read('data/indexia_lower.txt'))
         cnxn = ix.open_cnxn(ix.db)
         
         pseudonym = terminal.ask_name('pseudonym')
         scribe = ix.add_scribe(cnxn, pseudonym)
         (scribe_id, pseudonym) = scribe.loc[0]
-        print(f'welcome, {pseudonym}.')
         
+        print(f'welcome, {pseudonym}.')

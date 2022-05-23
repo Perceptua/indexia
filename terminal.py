@@ -10,10 +10,11 @@ from datetime import datetime as dt
 
 
 class terminal:
-    def print_file_contents(file):
+    def read(file):
         with open(file, 'r') as f:
             contents = f.read()
-            print(contents)
+        
+        return contents
             
     def ask_name(name_for):
         name = input(f'\nenter {name_for}: ')

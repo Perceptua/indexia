@@ -1,0 +1,21 @@
+<a href="/{{ pseudonym }}", style="text-decoration:none"><pre>{{ title }}</pre></a>
+
+<p><b>wandering <a href="/{{ pseudonym }}/{{libronym }}">{{ libronym }}</a></b></p>
+
+{% if cards %}
+  <p><b>cards in {{ libronym }}</b></p>
+  <ul>
+    {% for card in cards %}
+      <li><a href="/{{ pseudonym }}/{{ libronym }}/{{ card }}">{{ card }}</a></li>
+    {% endfor %}
+  </ul>
+{% endif %}
+
+<p><b>create a card</b></p>
+<form class="" action="/{{ pseudonym }}/{{ libronym }}/create" method="post">
+  <label for="created">enter cration date (yyyy-mm-dd-hh-mm)</label><br>
+  <input type="text" name="created" value=""><br>
+  <label for="logonyms">enter logonyms separated by a space</label><br>
+  <input type="text" name="logonyms" value=""><br>
+  <input type="submit" value="create">
+</form>

@@ -2,5 +2,6 @@
 collections &amp; connections
 
 TODO:
-* create flask app for navigation & object creation
-* implement network graphs for cards & logonyms
+* enable deletions in flask app
+* update login flow
+* implement network graphs for logonyms

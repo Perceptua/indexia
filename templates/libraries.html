@@ -1,0 +1,27 @@
+<a href="/", style="text-decoration:none"><pre>{{ title }}</pre></a>
+
+{% if pseudonym %}
+  <p><b>welcome, {{ pseudonym }}.</b></p>
+
+  {% if libraries %}
+    <p><b>wander a library</b></p>
+    <ul>
+      {% for library in libraries %}
+        <li><a href="/{{ pseudonym }}/{{ library }}">{{ library }}</a></li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+
+  <p><b>build a library</b></p>
+  <form class="" action="/{{ pseudonym }}/create" method="post">
+    <label for="libronym">enter libronym</label><br>
+    <input type="text" name="libronym" value=""><br>
+    <input type="submit" value="create">
+  </form>
+{% else %}
+  <form class="" action="/" method="post">
+    <label for="pseudonym">enter pseudonym</label><br>
+    <input type="text" name="pseudonym" value=""><br>
+    <input type="submit" value="login">
+  </form>
+{% endif %}
