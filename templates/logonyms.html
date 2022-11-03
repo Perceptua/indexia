@@ -1,17 +1,23 @@
-<a href="/{{ pseudonym }}", style="text-decoration:none"><pre>{{ title }}</pre></a>
+<a href="/", style="text-decoration:none"><pre>{{ title }}</pre></a>
 
-<p><b>wandering <a href="/{{ pseudonym }}/{{libronym }}">{{ libronym }}</a></b></p>
+<p><b>welcome, <a href="/{{ pseudonym }}">{{ pseudonym }}</a></b></p>
+<p><b>wandering library <a href="/{{ pseudonym }}/{{libronym }}">{{ libronym }}</a></b></p>
+<p><b>viewing card {{ created }}</b></p>
 
 {% if logonyms %}
-  <p><b>logonyms for card {{ created }}</b></p>
-  <ul>
-    {% for logonym in logonyms %}
-      <li>{{ logonym }} [remove]</li>
-    {% endfor %}
-  </ul>
+  <h2>logonyms</h2>
+
+  {% for logonym in logonyms %}
+    <p><b>{{ logonym['logonym'] }}</b></p>
+
+    <form class="" action="/delete/logonyms/{{ logonym['id'] }}" method="post" style="margin:0;display:inline;">
+      <input type="hidden" name="url" value="{{ url_for(request.endpoint, **request.view_args) }}">
+      <input type="submit" value="remove">
+    </form>
+  {% endfor %}
 {% endif %}
 
-<p><b>add logonyms</b></p>
+<h2>add logonyms</h2>
 <form class="" action="/{{ pseudonym }}/{{ libronym }}/{{ created }}" method="post">
   <input type="hidden" name="created" value="{{ created }}">
   <label for="logonyms">enter logonyms separated by a space</label><br>

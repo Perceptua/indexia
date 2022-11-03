@@ -1,21 +1,27 @@
-<a href="/{{ pseudonym }}", style="text-decoration:none"><pre>{{ title }}</pre></a>
+<a href="/", style="text-decoration:none"><pre>{{ title }}</pre></a>
 
-<p><b>wandering <a href="/{{ pseudonym }}/{{libronym }}">{{ libronym }}</a></b></p>
+<p><b>welcome, <a href="/{{ pseudonym }}">{{ pseudonym }}</a></b></p>
+<p><b>wandering library {{ libronym }}</b></p>
 
 {% if cards %}
-  <p><b>cards in {{ libronym }}</b></p>
-  <ul>
-    {% for card in cards %}
-      <li><a href="/{{ pseudonym }}/{{ libronym }}/{{ card }}">{{ card }}</a></li>
-    {% endfor %}
-  </ul>
+  <h2>cards in {{ libronym }}</h2>
+  {% for card in cards %}
+    <h3>
+      <a href="/{{ pseudonym }}/{{ libronym }}/{{ card['created'] }}">
+        {{ card['created'] }} {{ card['preview'] }}
+      </a>
+    </h3>
+
+    <form class="" action="/delete/cards/{{ card['id'] }}" method="post" style="margin:0;display:inline;">
+      <input type="hidden" name="url" value="{{ url_for(request.endpoint, **request.view_args) }}">
+      <input type="submit" value="remove">
+    </form>
+  {% endfor %}
 {% endif %}
 
-<p><b>create a card</b></p>
+<h2>create a card</h2>
 <form class="" action="/{{ pseudonym }}/{{ libronym }}/create" method="post">
-  <label for="created">enter cration date (yyyy-mm-dd-hh-mm)</label><br>
+  <label for="created"><b>enter cration date (yyyy-mm-dd-hh-mm)</b></label><br>
   <input type="text" name="created" value=""><br>
-  <label for="logonyms">enter logonyms separated by a space</label><br>
-  <input type="text" name="logonyms" value=""><br>
   <input type="submit" value="create">
 </form>

@@ -1,20 +1,30 @@
 <a href="/", style="text-decoration:none"><pre>{{ title }}</pre></a>
 
 {% if pseudonym %}
-  <p><b>welcome, {{ pseudonym }}.</b></p>
+  <p><b>welcome, {{ pseudonym }}</b></p>
 
   {% if libraries %}
-    <p><b>wander a library</b></p>
-    <ul>
-      {% for library in libraries %}
-        <li><a href="/{{ pseudonym }}/{{ library }}">{{ library }}</a></li>
-      {% endfor %}
-    </ul>
+    <h2>wander a library</h2>
+    {% for library in libraries %}
+      <h3><a href="/{{ pseudonym }}/{{ library['libronym'] }}">
+          {{ library['libronym'] }}
+      </a></h3>
+
+      <form action="/delete/libraries/{{ library['id'] }}" method="post" style="margin:0;display:inline;">
+        <input type="hidden" name="url" value="{{ url_for(request.endpoint, **request.view_args) }}">
+        <input type="submit" value="remove">
+      </form>
+
+      <p><b>last updated:</b> {{ library['last_updated'] }}</p>
+      <p><b>cards:</b> {{ library['card_count'] }}</p>
+      <p><b>logonyms:</b> {{ library['logonym_count'] }}</p>
+    {% endfor %}
   {% endif %}
 
-  <p><b>build a library</b></p>
+  <br><br>
+  <h2>build a library</h2>
   <form class="" action="/{{ pseudonym }}/create" method="post">
-    <label for="libronym">enter libronym</label><br>
+    <label for="libronym"><b>enter libronym</b></label><br>
     <input type="text" name="libronym" value=""><br>
     <input type="submit" value="create">
   </form>

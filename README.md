@@ -2,6 +2,7 @@
 collections &amp; connections
 
 TODO:
-* enable deletions in flask app
-* update login flow
+* add object search page
 * implement network graphs for logonyms
+* enable object updates in app
+* update login flow
