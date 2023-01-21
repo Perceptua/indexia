@@ -5,10 +5,12 @@ Created on Sat Apr 30 10:06:15 2022
 @author: aphorikles
 """
 
-from queries import opera
+from inquiry import opera
 import unittest as ut
 
-class Testopera(ut.TestCase):
+
+
+class TestOpera(ut.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.tablename = 'users'
@@ -30,6 +32,8 @@ class Testopera(ut.TestCase):
         statement = opera.select(self.tablename, ['uid'], 'WHERE uid > 1')
         expected = 'SELECT uid FROM users WHERE uid > 1'
         self.assertEqual(statement, expected)
-        
+    
+
+    
 if __name__ == '__main__':
     ut.main()

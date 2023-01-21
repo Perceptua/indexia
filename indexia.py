@@ -6,8 +6,7 @@ Created on Sat Apr 30 09:22:34 2022
 """
 
 
-from terminal import terminal
-from queries import opera
+from inquiry import opera
 from schemata import tabula
 import sqlite3
 import pandas as pd
@@ -33,9 +32,7 @@ class indexia:
         Close all database connections on exit.
 
         '''
-        for db in self.cnxns:
-            for cnxn in self.cnxns[db]:
-                cnxn.close()
+        self.close_all_cnxns()
             
     def open_cnxn(self, db):
         '''
@@ -54,6 +51,7 @@ class indexia:
         '''
         cnxn = sqlite3.connect(db)
         cnxn.execute('PRAGMA foreign_keys = 1')
+        print(open('data/indexia_lower.txt').read())
         
         if db in self.cnxns.keys():
             self.cnxns[db] += [cnxn]
@@ -61,6 +59,35 @@ class indexia:
             self.cnxns[db] = [cnxn]
         
         return cnxn
+    
+    def close_cnxn(self, db):
+        '''
+        Close connections to a database.
+
+        Parameters
+        ----------
+        db : str
+            Path to the database file.
+
+        Returns
+        -------
+        None.
+
+        '''
+        for cnxn in self.cnxns[db]:
+            cnxn.close()
+    
+    def close_all_cnxns(self):
+        '''
+        Close all database connections.
+
+        Returns
+        -------
+        None.
+
+        '''
+        for db in self.cnxns:
+            self.close_cnxn(db)
         
     def get_or_create(self, cnxn, tablename, dtype, cols, vals, retry=True):
         '''
@@ -247,7 +274,7 @@ class indexia:
         
         return card
     
-    def add_logonym(self, cnxn, logonym, card):
+    def add_logonym(self, cnxn, card, logonym):
         dtype = self.tabula.columns['logonyms']
         (card_id, created, _) = card.loc[0]
         
@@ -257,46 +284,64 @@ class indexia:
         
         return logonym
     
-    def add_logonyms(self, cnxn, card, logonyms=pd.DataFrame()):
-        logonym = terminal.ask_name('logonym')
-        logonym = self.add_logonym(cnxn, logonym, card)
-        logonyms = logonym if logonyms.empty else pd.concat([logonyms, logonym])
-        add_more = terminal.ask_yes_no('add another logonym?')
-        
-        if add_more:
-            return self.add_logonyms(cnxn, card, logonyms)
-        else:
-            return logonyms
-    
     
     
     ###########
     # getters #
     ###########
         
-    def get_libraries(self, cnxn, scribe):
+    def get_scribes(self, cnxn, pseudonym=None):
+        where = opera.where(['pseudonym'], [pseudonym]) if pseudonym else ''
+        select = opera.select('scribes', ['*'], where)
+        expected_columns = self.tabula.columns['scribes'].keys()
+        scribes = opera.get_df(cnxn, select, expected_columns)
+        
+        return scribes
+    
+    def get_libraries(self, cnxn, scribe, libronym=None):
         (scribe_id, pseudonym) = scribe.loc[0]
-        where = opera.where(['scribe_id'], [scribe_id])
+        cols = ['scribe_id', 'libronym'] if libronym else ['scribe_id']
+        vals = [scribe_id, libronym] if libronym else [scribe_id]
+        where = opera.where(cols, vals)
         select = opera.select('libraries', ['*'], where)
         expected_columns = self.tabula.columns['libraries'].keys()
         libraries = opera.get_df(cnxn, select, expected_columns)
         
         return libraries
         
-    def get_cards(self, cnxn, library, columns=['*']):
+    def get_cards(self, cnxn, library, created=None):
         (library_id, libronym, _) = library.loc[0]
-        where = opera.where(['library_id'], [library_id])
-        select = opera.select('cards', columns, where)
+        cols = ['library_id', 'created'] if created else ['library_id']
+        vals = [library_id, created] if created else [library_id]
+        where = opera.where(cols, vals)
+        select = opera.select('cards', ['*'], where)
         expected_columns = self.tabula.columns['cards'].keys()
         cards = opera.get_df(cnxn, select, expected_columns)
         
         return cards
     
-    def get_logonyms(self, cnxn, card):
+    def get_logonyms(self, cnxn, card, logonym=None):
         (card_id, created, _) = card.loc[0]
-        where = opera.where(['card_id'], [card_id])
+        cols = ['card_id', 'logonym'] if logonym else ['card_id']
+        vals = [card_id, logonym] if logonym else [card_id]
+        where = opera.where(cols, vals)
         select = opera.select('logonyms', ['*'], where)
         expected_columns = self.tabula.columns['logonyms'].keys()
         logonyms = opera.get_df(cnxn, select, expected_columns)
         
         return logonyms
+    
+    def get_corpus(self, cnxn, scribe):
+        (scribe_id, pseudonym) = scribe.loc[0]
+        query_file = 'data/queries/corpus.sql'
+        sql = open(query_file).read().format(scribe_id=scribe_id)
+        corpus = opera.get_df(cnxn, sql)
+        
+        return corpus
+    
+    
+if __name__ == '__main__':
+    with indexia() as ix:
+        cnxn = ix.open_cnxn(ix.db)
+        scribe = ix.add_scribe(cnxn, 'aphorikles')
+        corpus = ix.get_corpus(cnxn, scribe)

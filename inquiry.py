@@ -7,6 +7,8 @@ Created on Sat Apr 30 09:50:00 2022
 
 import pandas as pd
 
+
+
 class opera:
     def get_df(cnxn, sql, expected_columns=None):
         '''
@@ -34,7 +36,8 @@ class opera:
         '''
         try:
             df = pd.read_sql(sql, cnxn)
-        except:
+        except Exception as err:
+            print(err)
             df = pd.DataFrame(columns=expected_columns)
             
         return df
@@ -176,84 +179,3 @@ class opera:
         ])
         
         return where
-
-
-
-class inquiry:
-    def library_last_updated(cnxn, library_id):
-        sql = f'''
-            SELECT
-                id,
-                MAX(created) AS created
-            FROM
-                cards
-            WHERE
-                library_id = {library_id}
-            GROUP BY
-                id;
-        '''
-        
-        most_recent_card = opera.get_df(cnxn, sql)
-        last_updated = 'n/a'
-        
-        if not most_recent_card.empty:
-            last_updated = most_recent_card.created.values[0]
-                
-        return last_updated
-    
-    def count_library_items(cnxn, library_id):
-        sql = f'''
-            SELECT
-                id
-            FROM
-                cards
-            WHERE
-                library_id = {library_id};
-        '''
-        
-        cards = opera.get_df(cnxn, sql)
-        card_count = 0 
-        logonym_count = 0
-        
-        if not cards.empty:
-            card_count = cards.shape[0]
-            card_ids = ','.join([f"'{i}'" for i in cards.id])
-            sql = f'''
-                SELECT
-                    COUNT(*) AS logonym_count
-                FROM
-                    logonyms
-                WHERE
-                    card_id IN ({card_ids});                   
-            '''
-            
-            logonyms = opera.get_df(cnxn, sql)
-            logonym_count = 0 if logonyms.empty else logonyms.shape[0]
-        
-        return card_count, logonym_count
-    
-    def card_preview(cnxn, card_id, length=35):
-        sql = f'''
-        SELECT
-            logonym
-        FROM
-            logonyms
-        WHERE
-            card_id = {card_id};
-        '''
-        
-        logonyms = opera.get_df(cnxn, sql, ['logonym'])
-        preview = ''
-        
-        for logonym in list(logonyms.logonym):
-            to_add = f', {logonym}' if preview else logonym
-            
-            if len(preview + to_add) < length:
-                preview += to_add
-            else:
-                preview += '...'
-        
-        preview = f'({preview})'
-        
-        return preview
-    
