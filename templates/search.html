@@ -1,9 +1,0 @@
-<a href="/", style="text-decoration:none"><pre>{{ title }}</pre></a>
-
-<p><b>welcome, <a href="/{{ pseudonym }}">{{ pseudonym }}</a></b></p>
-
-<h3>choose an object to search:</h3>
-
-{% for object in objects %}
-  <a href="/{{ pseudonym }}/search/{{ object }}">{{ object }}</a>
-{% endfor %}
