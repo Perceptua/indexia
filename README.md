@@ -1,5 +1,7 @@
 # indexia
-collections &amp; connections
 
-TODO:
-* implement search & network graphs
+Collections & connections. A virtual Zettelkasten.
+
+## Installation
+
+## Usage

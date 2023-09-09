@@ -1,47 +1,14 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Sat Apr 30 09:50:00 2022
+'''
+inquiry
 
-@author: aphorikles
-"""
+Generate SQL for indexia database oprerations.
 
-import pandas as pd
-
-
-
-class opera:
-    def get_df(cnxn, sql, expected_columns=None):
-        '''
-        Get result of SQL query as a pandas dataframe.
-        In the event of an exception, return an empty
-        dataframe.
-
-        Parameters
-        ----------
-        cnxn : sqlite3.Connection
-            Connection to the database.
-        sql : str
-            SQL to be executed by pandas.read_sql.
-        expected_columns : list(str), optional
-            List of expected columns. Only used in event 
-            of exception to ensure empty dataframe has 
-            expected shape. The default is None.
-
-        Returns
-        -------
-        df : pandas.DataFrame
-            A dataframe containing the results of the 
-            SQL query.
-
-        '''
-        try:
-            df = pd.read_sql(sql, cnxn)
-        except Exception as err:
-            print(err)
-            df = pd.DataFrame(columns=expected_columns)
-            
-        return df
+'''
+class Inquiry:
+    '''
+    Generate SQL strings from dynamic inputs. 
     
+    '''
     def create(tablename, columns):
         '''
         Get a SQL CREATE TABLE statement.
@@ -90,6 +57,7 @@ class opera:
             '(' + ','.join(f"'{v[i]}'" for i,_ in enumerate(v)) + ')' 
             for v in values
         )
+        
         columns = f" ({','.join(columns)})" if columns else ''
         insert = f'INSERT INTO {tablename}{columns}'
         insert = f'{insert} VALUES {values}'
@@ -121,6 +89,22 @@ class opera:
         return select
     
     def delete(tablename, conditions=''):
+        '''
+        Get a SQL DELETE FROM statement.
+
+        Parameters
+        ----------
+        tablename : str
+            Name of the table from which to delete.
+        conditions : str, optional
+            Optional WHERE conditions. The default is ''.
+
+        Returns
+        -------
+        delete : str
+            A formatted SQL DELETE FROM statement.
+
+        '''
         delete = f'DELETE FROM {tablename} {conditions}'
         
         return delete
@@ -156,7 +140,7 @@ class opera:
         
         return update
     
-    def where(cols, vals):
+    def where(cols, vals, conjunction='AND'):
         '''
         Construct WHERE condition from columns & values
 
@@ -166,6 +150,9 @@ class opera:
             List of column names.
         vals : list(any)
             List of values.
+        conjunction : str, optional
+            SQL keyword to use as conjunction between 
+            clauses (e.g., AND, OR).
 
         Returns
         -------
@@ -174,8 +161,9 @@ class opera:
 
         '''
         where = f"WHERE {cols[0]} = '{vals[0]}' "
+        
         where += ' '.join([
-            f"AND {cols[i]} = '{vals[i]}'" for i in range(1,len(cols))
+            f"{conjunction} {cols[i]} = '{vals[i]}'" for i in range(1, len(cols))
         ])
         
         return where
