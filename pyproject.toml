@@ -1,16 +1,16 @@
 [build-system]
-requires = ["setuptools>=50.0"]
+requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "indexia"
-version = "0.0.1"
-authors = [
-  { name="Aphorikles", email="perceptua.blue@gmail.com" },
-]
+version = "0.0.0"
 description = "Collections & connections. A virtual Zettelkasten."
-readme = "README.md"
+readme = "README.rst"
 requires-python = ">=3.8"
+authors = [
+  {name="Aphorikles", email="perceptua.blue@gmail.com"},
+]
 classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: MIT License",

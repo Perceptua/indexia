@@ -1,5 +1,6 @@
-from datetime import datetime as dt
 from indexia.indexia import Indexia
+from indexia.inquiry import Tabula
+
 import os
 import pandas as pd
 import sqlite3
@@ -8,37 +9,47 @@ import unittest as ut
 
 class TestIndexia(ut.TestCase):
     @classmethod        
-    def setUpClass(cls):
-        cls.created = dt.now().strftime('%Y-%m-%d-%H-%M')
-        
-        cls.test_db = os.path.join(
-            os.path.abspath(__file__),
-            '..',
-            'data/test.db'
-        )
+    def setUpClass(cls):        
+        cls.test_db = 'tests/data/test_indexia.db'
         
     @classmethod
-    def makeTestObjects(cls):
-        with Indexia(cls.test_db) as ix:
+    def getTestObjects(cls):
+        creator = Tabula.get_creator_table(
+            'creator', 'name'
+        )
+        
+        creature = Tabula.get_creature_table(
+            'creator', 'creature', 'name'
+        )
+        
+        return creator, creature
+
+    def setUp(self):
+        creator, creature = self.getTestObjects()
+        self.creator_table, self.creator_dtype = creator
+        self.creature_table, self.creature_dtype = creature
+        self.trait = 'name'
+        self.creator_expr = 'father'
+        self.creature_expr = 'son'
+        
+        with Indexia(self.test_db) as ix:
             cnxn = ix.open_cnxn(ix.db)
-            cls.scribe = ix.add_scribe(cnxn, 'test')
-            cls.library = ix.add_library(cnxn, cls.scribe, 'test')
-            cls.card = ix.add_card(cnxn, cls.library, created=cls.created)
-            cls.logonym = ix.add_logonym(cnxn, cls.card, 'test')
-        
-        (cls.scribe_id, cls.pseudonym) = cls.scribe.loc[0]
-        
-        (cls.library_id, 
-         cls.libronym, 
-         cls.scribe_id_library) = cls.library.loc[0]
-        
-        (cls.card_id,
-         cls.created_card, 
-         cls.library_id_card) = cls.card.loc[0]
-        
-        (cls.logonym_id, 
-         cls.logonym, 
-         cls.card_id_logonym) = cls.logonym.loc[0]
+            
+            self.creator_data = ix.get_or_create(
+                cnxn, self.creator_table, self.creator_dtype, 
+                [self.trait], 
+                [self.creator_expr]
+            )
+            
+            self.creator_id, _ = self.creator_data.iloc[0]
+            
+            self.creature_data = ix.get_or_create(
+                cnxn, self.creature_table, self.creature_dtype, 
+                [self.trait, 'creator_id'], 
+                [self.creature_expr, self.creator_id]
+            )
+            
+            self.creature_id, _, _ = self.creature_data.iloc[0]
         
     def testOpenCnxn(self):
         with Indexia(self.test_db) as ix:
@@ -64,11 +75,121 @@ class TestIndexia(ut.TestCase):
             
             for db in ix.cnxns:
                 self.assertEqual(len(ix.cnxns[db]), 0)
+                
+    def testGetOrCreate(self):
+        with Indexia(self.test_db) as ix:
+            cnxn = ix.open_cnxn(ix.db)
+            creator_expr = 'neonymos'
+            
+            self.assertRaises(
+                ValueError, ix.get_or_create, 
+                cnxn, self.creator_table, self.creator_dtype, 
+                [self.trait], [creator_expr], retry=False
+            )
+            
+            creator_data = ix.get_or_create(
+                cnxn, self.creator_table, self.creator_dtype, 
+                [self.trait], [creator_expr], retry=True
+            )
+            
+            self.assertIsInstance(creator_data, pd.DataFrame),
+            self.assertEqual(creator_data.shape[0], 1)
+     
+    def testDelete(self):
+        with Indexia(self.test_db) as ix:
+            cnxn = ix.open_cnxn(ix.db)
+            deleted = ix.delete(cnxn, self.creator_table, self.creator_id)
+            self.assertEqual(self.creator_id, deleted)
+            
+            self.assertRaises(
+                ValueError, ix.get_or_create, 
+                cnxn, self.creator_table, self.creator_dtype, 
+                [self.trait], [self.creator_expr], retry=False
+            )
+            
+    def testUpdate(self):        
+        with Indexia(self.test_db) as ix:
+            cnxn = ix.open_cnxn(ix.db)
+            
+            rows_updated = ix.update(
+                cnxn, self.creator_table, 
+                [self.trait], ['pater'], 
+                [self.trait], [self.creator_expr]
+            )
+                        
+            updated = ix.get_or_create(
+                cnxn, self.creator_table, self.creator_dtype, 
+                ['id'], [self.creator_id]
+            )
+            
+            self.assertEqual(rows_updated, 1)
+            self.assertEqual(updated.loc[0, 'name'], 'pater')
+            
+    def testAddCreator(self):
+        with Indexia(self.test_db) as ix:
+            cnxn = ix.open_cnxn(ix.db)
+            
+            creator_data = ix.add_creator(
+                cnxn, self.creator_table, self.trait, self.creator_expr
+            )
+            
+            pd.testing.assert_frame_equal(creator_data, self.creator_data)
+            
+            creator_data = ix.add_creator(
+                cnxn, self.creator_table, self.trait, 'neonymos'
+            )
+            
+            creator_id, creator_expr = creator_data.iloc[0]
+            self.assertEqual(creator_id, self.creator_id + 1)
+            self.assertEqual(creator_expr, 'neonymos')
+    
+    def testAddCreature(self):
+        with Indexia(self.test_db) as ix:
+            cnxn = ix.open_cnxn(ix.db)
+            
+            creature_data = ix.add_creature(
+                cnxn, self.creator_table, self.creator_data, 
+                self.creature_table, self.trait, self.creature_expr
+            )
+            
+            pd.testing.assert_frame_equal(creature_data, self.creature_data)
+            
+            creature_data = ix.add_creature(
+                cnxn, self.creator_table, self.creator_data,
+                self.creature_table, self.trait, 'neonymos'
+            )
+            
+            creature_id, creature_expr, creator_id = creature_data.iloc[0]
+            self.assertEqual(creator_id, self.creator_id)
+            self.assertEqual(creature_id, self.creature_id + 1)
+            self.assertEqual(creature_expr, 'neonymos')
+                
+    def testGetAllTables(self):
+        with Indexia(self.test_db) as ix:
+            cnxn = ix.open_cnxn(ix.db)
+            table_list = ix.get_all_tables(cnxn)
+            
+            self.assertListEqual(
+                table_list, [self.creator_table, self.creature_table]
+            )
+    
+    def testGetTableColumns(self):
+        with Indexia(self.test_db) as ix:
+            cnxn = ix.open_cnxn(ix.db)
+            column_data = ix.get_table_columns(cnxn, self.creator_table)
+            
+            exp_column_data = pd.DataFrame(data={
+                'column_name': ['id', 'name'],
+                'data_type': ['INTEGER', 'TEXT'],
+                'not_null': [1, 1],
+                'is_pk': [1, 0]
+            })
+            
+            pd.testing.assert_frame_equal(column_data, exp_column_data)
     
     def testGetDF(self):
-        self.makeTestObjects()
-        scribe_cols = ['id', 'pseudonym']
-        valid_sql = 'SELECT * FROM scribes;'
+        creator_cols = ['id', 'name']
+        valid_sql = f'SELECT * FROM {self.creator_table};'
         invalid_sql = 'SELECT * FROM nonexistent_table;'
         
         with Indexia(self.test_db) as ix:
@@ -78,7 +199,8 @@ class TestIndexia(ut.TestCase):
             raise_errors = False
             df = ix.get_df(cnxn, valid_sql, expected_columns, raise_errors)
             self.assertIsInstance(df, pd.DataFrame)
-            self.assertEqual(list(df.columns), scribe_cols)
+            self.assertEqual(list(df.columns), creator_cols)
+            
             df = ix.get_df(cnxn, invalid_sql, expected_columns, raise_errors)
             self.assertIsInstance(df, pd.DataFrame)
             self.assertEqual(list(df.columns), [])
@@ -87,7 +209,8 @@ class TestIndexia(ut.TestCase):
             raise_errors = True
             df = ix.get_df(cnxn, valid_sql, expected_columns, raise_errors)
             self.assertIsInstance(df, pd.DataFrame)
-            self.assertEqual(list(df.columns), scribe_cols)
+            self.assertEqual(list(df.columns), creator_cols)
+            
             self.assertRaises(
                 pd.io.sql.DatabaseError, ix.get_df, 
                 cnxn, invalid_sql, expected_columns, raise_errors
@@ -96,246 +219,99 @@ class TestIndexia(ut.TestCase):
             expected_columns = ['invalid_column']
             raise_errors = False
             df = ix.get_df(cnxn, valid_sql, expected_columns, raise_errors)
-            self.assertEqual(list(df.columns), scribe_cols)
+            self.assertEqual(list(df.columns), creator_cols)
             
             expected_columns = ['invalid_column']
             raise_errors = True
+            
             self.assertRaises(
                 ValueError, ix.get_df, 
                 cnxn, valid_sql, expected_columns, raise_errors
             )
             
-            expected_columns = scribe_cols
+            expected_columns = creator_cols
             raise_errors = True
             df = ix.get_df(cnxn, valid_sql, expected_columns, raise_errors)
-            self.assertEqual(list(df.columns), scribe_cols)
-            self.assertGreaterEqual(df.shape[0], 1)
-            
-    def testGetOrCreate(self):
-        self.makeTestObjects()
-        tablename = 'scribes'        
-        cols = ['id', 'pseudonym']
-        vals = [self.scribe_id + 2, 'test2']
-        retry = False
-        
-        with Indexia(self.test_db) as ix:
-            cnxn = ix.open_cnxn(ix.db)
-            dtype = ix.tabula.columns['scribes']
-                        
-            self.assertRaises(
-                ValueError, ix.get_or_create, cnxn,
-                tablename, dtype, cols, vals, retry
-            )
-            
-            retry = True
-            
-            created = ix.get_or_create(
-                cnxn, tablename, dtype, 
-                cols, vals, retry
-            )
-            
-            self.assertEqual(list(created.loc[0]), vals)
-            
-            retry = False
-            
-            created = ix.get_or_create(
-                cnxn, tablename, dtype, 
-                cols, vals, retry
-            )
-            
-            self.assertEqual(list(created.loc[0]), vals)
-            
+            self.assertEqual(list(df.columns), creator_cols)
+            self.assertGreaterEqual(df.shape[0], 1)    
+    
     def testGetByID(self):
-        self.makeTestObjects()
-        
-        with Indexia(self.test_db) as ix:
-            cnxn = ix.open_cnxn(ix.db)
-            scribe = ix.get_by_id(cnxn, 'scribes', self.scribe_id)
-            scribe_id, pseudonym = scribe.loc[0]
-            self.assertEqual(scribe_id, self.scribe_id)
-            self.assertEqual(pseudonym, 'test')
-            no_scribe = ix.get_by_id(cnxn, 'scribes', 1000)
-            self.assertTrue(no_scribe.empty)
-    
-    def testDelete(self):
-        self.makeTestObjects()
-        rows_deleted = 0
-        
         with Indexia(self.test_db) as ix:
             cnxn = ix.open_cnxn(ix.db)
             
-            # expect 1
-            rows_deleted += ix.delete(cnxn, 'logonyms', self.logonym_id)
-            rows_deleted += ix.delete(cnxn, 'cards', self.card_id)
-            rows_deleted += ix.delete(cnxn, 'scribes', self.scribe_id)
-            self.assertEqual(rows_deleted, 3)
-            
-            # expect 0 (already deleted by ON_DELETE=CASCADE constraint)
-            rows_deleted += ix.delete(cnxn, 'libraries', self.library_id)
-            library = ix.get_by_id(cnxn, 'libraries', self.library_id)
-            self.assertEqual(rows_deleted, 3)
-            self.assertTrue(library.empty)
-    
-    def testUpdate(self):
-        self.makeTestObjects()
-        rows_updated = 0
-        
-        with Indexia(self.test_db) as ix:
-            cnxn = ix.open_cnxn(ix.db)
-            
-            rows_updated += ix.update(
-                cnxn, 'scribes', 
-                ['pseudonym'], ['testUpdate'], 
-                ['id'], [self.scribe_id]
+            creator_retrieved = ix.get_by_id(
+                cnxn, self.creator_table, self.creator_id
             )
             
-            _, updated = ix.get_by_id(cnxn, 'scribes', self.scribe_id).loc[0]
-            self.assertEqual(rows_updated, 1) 
-            self.assertEqual(updated, 'testUpdate')
-    
-    def testAddScribe(self):
-        self.makeTestObjects()
-        
-        with Indexia(self.test_db) as ix:
-            cnxn = ix.open_cnxn(ix.db)
-            add_existing = ix.add_scribe(cnxn, self.pseudonym)
-            result = ix.get_by_id(cnxn, 'scribes', self.scribe_id)
-            pd.testing.assert_frame_equal(add_existing, result)
+            pd.testing.assert_frame_equal(self.creator_data, creator_retrieved)
             
-            add_new = ix.add_scribe(cnxn, 'testNew')
-            new_id, new_pseudonym = add_new.loc[0]
-            
-            result = ix.get_or_create(
-                cnxn, 'scribes', ix.tabula.columns['scribes'],
-                ['id', 'pseudonym'], [new_id, new_pseudonym],
-                retry=False
+            expect_empty = ix.get_by_id(
+                cnxn, self.creator_table, self.creator_id + 1
             )
             
-            pd.testing.assert_frame_equal(add_new, result)
+            self.assertTrue(expect_empty.empty)
     
-    def testAddLibrary(self):
-        self.makeTestObjects()
-        
+    def testGetCreatorGenus(self):
         with Indexia(self.test_db) as ix:
             cnxn = ix.open_cnxn(ix.db)
-            add_existing = ix.add_library(cnxn, self.scribe, self.libronym)
-            result = ix.get_by_id(cnxn, 'libraries', self.library_id)
-            pd.testing.assert_frame_equal(add_existing, result)
+            genus = ix.get_creator_genus(cnxn, self.creature_table)
+            self.assertEqual(self.creator_table, genus)
             
-            add_new = ix.add_library(cnxn, self.scribe, 'testNew')
-            new_id, new_libronym, new_scribe_id = add_new.loc[0]
+    def testGetCreatureSpecies(self):
+        with Indexia(self.test_db) as ix:
+            cnxn = ix.open_cnxn(ix.db)
+            species = ix.get_creature_species(cnxn, self.creator_table)
+            exp_species = ['creature']
+            self.assertEqual(species, exp_species)
             
-            result = ix.get_or_create(
-                cnxn, 'libraries', ix.tabula.columns['libraries'],
-                ['id', 'libronym', 'scribe_id'], 
-                [new_id, new_libronym, new_scribe_id],
-                retry=False
+            species = ix.get_creature_species(cnxn, self.creature_table)
+            exp_species = []
+            self.assertEqual(species, exp_species)
+    
+    def testGetCreator(self):
+        with Indexia(self.test_db) as ix:
+            cnxn = ix.open_cnxn(ix.db)
+            
+            creator_genus, creator_data = ix.get_creator(
+                cnxn, self.creature_table, self.creature_data
+            )[0]
+            
+            exp_genus = ix.get_creator_genus(cnxn, self.creature_table)
+            self.assertEqual(creator_genus, exp_genus)
+            pd.testing.assert_frame_equal(creator_data, self.creator_data)
+            
+            expect_empty = ix.get_creator(
+                cnxn, self.creator_table, self.creator_data
             )
             
-            pd.testing.assert_frame_equal(add_new, result)
-    
-    def testAddCard(self):
-        self.makeTestObjects()
-        
+            self.assertEqual(len(expect_empty), 0)
+            
+    def testGetCreatures(self):
         with Indexia(self.test_db) as ix:
-            cnxn = ix.open_cnxn(ix.db)
-            add_existing = ix.add_card(cnxn, self.library, self.created)
-            result = ix.get_by_id(cnxn, 'cards', self.card_id)
-            pd.testing.assert_frame_equal(add_existing, result)
+            cnxn = ix.open_cnxn(ix.db)  
             
-            add_new = ix.add_card(cnxn, self.library, '2023-09-07-12-30')
-            new_id, new_created, new_library_id = add_new.loc[0]
-            
-            result = ix.get_or_create(
-                cnxn, 'cards', ix.tabula.columns['cards'],
-                ['id', 'created', 'library_id'], 
-                [new_id, new_created, new_library_id],
-                retry=False
+            creatures = ix.get_creatures(
+                cnxn, self.creator_table, self.creator_data
             )
             
-            pd.testing.assert_frame_equal(add_new, result)
-    
-    def testAddLogonym(self):
-        self.makeTestObjects()
-        
-        with Indexia(self.test_db) as ix:
-            cnxn = ix.open_cnxn(ix.db)
-            add_existing = ix.add_logonym(cnxn, self.card, self.logonym)
-            result = ix.get_by_id(cnxn, 'logonyms', self.logonym_id)
-            pd.testing.assert_frame_equal(add_existing, result)
+            exp_creatures = [('creature', pd.DataFrame(
+                data={'id': [1], 'name': ['son'], 'creator_id': [1]}
+            ))]
             
-            add_new = ix.add_logonym(cnxn, self.card, 'testNew')
-            new_id, new_logonym, new_card_id = add_new.loc[0]
+            species, members = creatures[0]
+            exp_species, exp_members = exp_creatures[0]
+            self.assertEqual(species, exp_species)
+            pd.testing.assert_frame_equal(members, exp_members)
             
-            result = ix.get_or_create(
-                cnxn, 'logonyms', ix.tabula.columns['logonyms'],
-                ['id', 'logonym', 'card_id'], 
-                [new_id, new_logonym, new_card_id],
-                retry=False
+            exp_empty = ix.get_creatures(
+                cnxn, self.creature_table, self.creature_data
             )
             
-            pd.testing.assert_frame_equal(add_new, result)
+            self.assertEqual(len(exp_empty), 0)
     
-    def testGetScribes(self):
-        self.makeTestObjects()
-        
-        with Indexia(self.test_db) as ix:
-            cnxn = ix.open_cnxn(ix.db)
-            ix.add_scribe(cnxn, 'test2')
-            all_scribes = ix.get_scribes(cnxn)
-            new_scribe = ix.get_scribes(cnxn, pseudonym='test2')
-            self.assertGreaterEqual(all_scribes.shape[0], 2)
-            self.assertEqual(new_scribe.shape[0], 1)
-    
-    def testGetLibraries(self):
-        self.makeTestObjects()
-        
-        with Indexia(self.test_db) as ix:
-            cnxn = ix.open_cnxn(ix.db)
-            ix.add_library(cnxn, self.scribe, 'test2')
-            all_libraries = ix.get_libraries(cnxn, self.scribe)
-            
-            new_library = ix.get_libraries(
-                cnxn, self.scribe, libronym='test2'
-            )
-            
-            self.assertGreaterEqual(all_libraries.shape[0], 2)
-            self.assertEqual(new_library.shape[0], 1)
-    
-    def testGetCards(self):
-        self.makeTestObjects()
-        
-        with Indexia(self.test_db) as ix:
-            cnxn = ix.open_cnxn(ix.db)
-            ix.add_card(cnxn, self.library, '2023-09-08-16-30')
-            all_cards = ix.get_cards(cnxn, self.library)
-            
-            new_card = ix.get_cards(
-                cnxn, self.library, created='2023-09-08-16-30'
-            )
-            
-            self.assertGreaterEqual(all_cards.shape[0], 2)
-            self.assertEqual(new_card.shape[0], 1)
-    
-    def testGetLogonyms(self):
-        self.makeTestObjects()
-        
-        with Indexia(self.test_db) as ix:
-            cnxn = ix.open_cnxn(ix.db)
-            ix.add_logonym(cnxn, self.card, 'test2')
-            all_logonyms = ix.get_logonyms(cnxn, self.card)
-            
-            new_logonym = ix.get_logonyms(
-                cnxn, self.card, logonym='test2'
-            )
-            
-            self.assertGreaterEqual(all_logonyms.shape[0], 2)
-            self.assertEqual(new_logonym.shape[0], 1)     
-    
-    @classmethod
-    def tearDownClass(cls):
+    def tearDown(self):
         try:
-            os.remove(cls.test_db)
+            os.remove(self.test_db)
         except:
             pass
 

@@ -167,3 +167,94 @@ class Inquiry:
         ])
         
         return where
+
+
+class Tabula:
+    '''
+    Defines columns & data types of indexia tables.
+    
+    '''
+    def get_creator_table(name, attribute):
+        '''
+        Get name & columns of a creator (unreferenced) table.
+
+        Parameters
+        ----------
+        name : str
+            Name of the creator table.
+        attribute : str
+            Name of the creator's text attribute.
+
+        Returns
+        -------
+        creator_table : tuple(str, dict)
+            A tuple whose first entry is the name of the creator table, 
+            & whose second is a dict of table columns & data types.
+
+        '''
+        creator_table = (name, {
+            'id': 'INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL',
+            attribute: 'TEXT UNIQUE NOT NULL'
+        })
+        
+        return creator_table
+    
+    def get_creature_table(creator, name, attribute):
+        '''
+        Get name & columns of a creature (referenced) table.
+
+        Parameters
+        ----------
+        creator : str
+            Name of the creator (parent) table.
+        name : str
+            Name of the creature table.
+        attribute : str
+            Name of the creature's text attribute.
+
+        Returns
+        -------
+        creature_table : tuple(str, dict)
+            A tuple whose first entry is the name of the creature table,
+            & whose second is a dict of table columns & data types.
+
+        '''
+        creature_table = (name, {
+            'id': 'INTEGER PRIMARY KEY AUTOINCREMENT',
+            attribute: 'TEXT UNIQUE NOT NULL',
+            f'{creator}_id': 'INTEGER NOT NULL',
+            f'FOREIGN KEY ({creator}_id)': Tabula.references(creator, 'id')
+        })
+        
+        return creature_table
+    
+    def references(
+            tablename, on_column, on_delete='CASCADE', on_update='CASCADE'
+        ):
+        '''
+        Generate SQL-formatted REFERENCES clause.
+
+        Parameters
+        ----------
+        tablename : str
+            Name of the referenced table.
+        on_column : str
+            Name of the referenced column.
+        on_delete : str, optional
+            Behavior of the child entity when the parent 
+            entity is deleted. The default is 'CASCADE'.
+        on_update : str, optional
+            Behavior of the child entity when the parent 
+            entity is updated. The default is 'CASCADE'.
+
+        Returns
+        -------
+        references : str
+            A SQL-formatted REFERENCES clause.
+
+        '''
+        references = f'REFERENCES {tablename}({on_column})'
+        references = f'{references} ON DELETE {on_delete}'
+        references = f'{references} ON UPDATE {on_update}'
+        
+        return references
