@@ -1,4 +1,4 @@
-from indexia.inquiry import Inquiry
+from indexia.inquiry import Inquiry, Tabula
 import unittest as ut
 
 
@@ -83,6 +83,50 @@ class TestInquiry(ut.TestCase):
         
         expected = "WHERE username = 'user1' OR username = 'user2'"
         self.assertEqual(statement, expected)
+
+
+class TestTabula(ut.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.creator = 'scribes'
+        cls.creature = 'libraries'
+        cls.creator_attr = 'pseudonym'
+        cls.creature_attr = 'libronym'
+        
+    def testGetCreatorTable(self):
+        tablename, cols = Tabula.get_creator_table(
+            self.creator, self.creator_attr
+        )
+        
+        self.assertEqual(self.creator, tablename)
+        self.assertEqual({'id', self.creator_attr}, set(cols.keys()))
+        
+    def testGetCreatureTable(self):
+        tablename, cols = Tabula.get_creature_table(
+            self.creator, self.creature, self.creature_attr
+        )
+        
+        self.assertEqual(self.creature, tablename)
+        
+        self.assertEqual({
+            'id', 
+            self.creature_attr, 
+            f'{self.creator}_id', 
+            f'FOREIGN KEY ({self.creator}_id)'
+        }, set(cols.keys()))
+    
+    def testReferences(self):
+        references = Tabula.references(
+            self.creator, 
+            self.creator_attr
+        )
+        
+        expected = ' '.join([
+            f'REFERENCES {self.creator}({self.creator_attr})',
+            'ON DELETE CASCADE ON UPDATE CASCADE'
+        ])
+        
+        self.assertEqual(references, expected)
 
 
 if __name__ == '__main__':
