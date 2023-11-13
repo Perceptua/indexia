@@ -5,6 +5,8 @@ Make sample creators & creatures.
 
 '''
 from indexia.indexia import Indexia
+from datetime import datetime as dt, timedelta as td
+import random
 
 
 class Maker:
@@ -245,6 +247,26 @@ class Templates:
         '''
         self.db = db
         
+    def show_templates(self):
+        '''
+        Show available templates
+
+        Returns
+        -------
+        templates : dict
+            Dictionary of available template names & table structures.
+
+        '''
+        templates = {
+            'philosophy': {'philosophers': {'works': {'topics'}}},
+            'zettelkasten': {'scribes': {'libraries': {'cards': {'keywords'}}}}
+        }
+        
+        print('Available templates:')
+        [print(f'\n{t}:', templates[t], sep='\n\t') for t in templates]
+        
+        return templates
+        
     def build_template(self, template_name):
         '''
         Create objects for the given template.
@@ -267,7 +289,7 @@ class Templates:
             data.
 
         '''
-        objects = []
+        objects = {}
         
         if template_name == 'philosophy':
             with Indexia(self.db) as ix:
@@ -287,68 +309,127 @@ class Templates:
                 )
                 
                 symposium = ix.add_creature(
-                    cnxn, 'philosophers', plato, 'works', 
-                    'title', 'Symposium'
+                    cnxn, 'philosophers', plato, 
+                    'works', 'title', 'Symposium'
                 )
                 
                 republic = ix.add_creature(
-                    cnxn, 'philosophers', plato, 'works', 
-                    'title', 'Republic'
+                    cnxn, 'philosophers', plato, 
+                    'works', 'title', 'Republic'
                 )
                 
                 on_the_heavens = ix.add_creature(
-                    cnxn, 'philosophers', aristotle, 'works', 
-                    'title', 'On the Heavens'
+                    cnxn, 'philosophers', aristotle, 
+                    'works', 'title', 'On the Heavens'
                 )
                 
                 topics = ix.add_creature(
-                    cnxn, 'philosophers', aristotle, 'works', 
-                    'title', 'Topics'
+                    cnxn, 'philosophers', aristotle, 
+                    'works', 'title', 'Topics'
                 )
                 
                 on_the_soul = ix.add_creature(
-                    cnxn, 'philosophers', aristotle, 'works', 
-                    'title', 'On the Soul'
+                    cnxn, 'philosophers', aristotle, 
+                    'works', 'title', 'On the Soul'
                 )
                 
                 ix.add_creature(
-                    cnxn, 'works', apology, 'topics', 'name', 'civics'
+                    cnxn, 'works', apology, 
+                    'topics', 'name', 'civics'
                 )
                 
                 ix.add_creature(
-                    cnxn, 'works', symposium, 'topics', 'name', 'love'
+                    cnxn, 'works', symposium, 
+                    'topics', 'name', 'love'
                 )
                 
                 ix.add_creature(
-                    cnxn, 'works', republic, 'topics', 'name', 'civics'
+                    cnxn, 'works', republic, 
+                    'topics', 'name', 'civics'
                 )
                 
                 ix.add_creature(
-                    cnxn, 'works', on_the_heavens, 'topics', 
-                    'name', 'cosmology'
+                    cnxn, 'works', on_the_heavens, 
+                    'topics', 'name', 'cosmology'
                 )
                 
                 ix.add_creature(
-                    cnxn, 'works', topics, 'topics', 'name', 'logic'
+                    cnxn, 'works', topics, 
+                    'topics', 'name', 'logic'
                 )
                 
                 ix.add_creature(
-                    cnxn, 'works', on_the_soul, 'topics', 'name', 'psychology'
+                    cnxn, 'works', on_the_soul, 
+                    'topics', 'name', 'psychology'
                 )
                 
                 ix.add_creature(
-                    cnxn, 'works', apology, 'topics', 'name', 'civics'
+                    cnxn, 'works', apology, 
+                    'topics', 'name', 'civics'
                 )
                 
                 philosophers = ix.get_df(cnxn, 'SELECT * FROM philosophers;')
-                objects += [('philosophers', philosophers)]
+                objects['philosophers'] = philosophers
                 
                 works = ix.get_df(cnxn, 'SELECT * FROM works;')
-                objects += [('works', works)]
+                objects['works'] = works
                 
                 topics = ix.get_df(cnxn, 'SELECT * FROM topics;')
-                objects += [('topics', topics)]
+                objects['topics'] = topics
+                
+        elif template_name == 'zettelkasten':
+            with Indexia(self.db) as ix:
+                cnxn = ix.open_cnxn(ix.db)
+                
+                scribe = ix.add_creator(cnxn, 'scribes', 'name', 'Grammateus')
+                
+                first = ix.add_creature(
+                    cnxn, 'scribes', scribe, 'libraries', 'name', 'First'
+                )
+                
+                second = ix.add_creature(
+                    cnxn, 'scribes', scribe, 'libraries', 'name', 'Second'
+                )
+                
+                now = dt.now()
+                
+                keywords = [
+                    'writing', 'inscription', 'zettelkasten',
+                    'mnemotechnic', 'topic', 'category',
+                    'antinomy', 'reason', 'anatomy',
+                    'science', 'logic', 'apodeictic'
+                ]
+                
+                for library in [first, second]:
+                    for i in range(1, 4):
+                        created = now + td(minutes=1)
+                        created = created.strftime('%Y-%m-%d-%H-%M')
+                        
+                        card = ix.add_creature(
+                            cnxn, 'libraries', library, 
+                            'cards', 'created', created
+                        )
+                        
+                        for keyword in random.sample(keywords, 3):
+                            ix.add_creature(
+                                cnxn, 'cards', card,
+                                'keywords', 'keyword', keyword
+                            )
+                
+                scribes = ix.get_df(cnxn, 'SELECT * FROM scribes;')
+                objects['scribes'] = scribes
+                
+                libraries = ix.get_df(cnxn, 'SELECT * FROM libraries;')
+                objects['libraries'] = libraries
+                
+                cards = ix.get_df(cnxn, 'SELECT * FROM cards;')
+                objects['cards'] = cards
+                
+                keywords = ix.get_df(cnxn, 'SELECT * FROM keywords;')
+                objects['keywords'] = keywords
+                
         else:
+            self.show_templates()
             raise ValueError(f'Found no template {template_name}.')
             
         return objects
