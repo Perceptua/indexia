@@ -222,3 +222,133 @@ class Maker:
                         great_grandsons += [ix.get_df(cnxn, sql)]
                         
             return fathers, sons, grandsons, great_grandsons
+        
+
+class Templates:
+    '''
+    Create template indexia objects.
+    
+    '''
+    def __init__(self, db):
+        '''
+        Creates a Templates instance.
+
+        Parameters
+        ----------
+        db : str
+            Path to the indexia database file.
+
+        Returns
+        -------
+        None.
+
+        '''
+        self.db = db
+        
+    def build_template(self, template_name):
+        '''
+        Create objects for the given template.
+
+        Parameters
+        ----------
+        template_name : str
+            Name of the template to build.
+
+        Raises
+        ------
+        ValueError
+            If template_name is not a valid template, raise 
+            a ValueError.
+
+        Returns
+        -------
+        objects : list(tuple(string, pandas.DataFrame))
+            List of tuples containing table names & object 
+            data.
+
+        '''
+        objects = []
+        
+        if template_name == 'philosophy':
+            with Indexia(self.db) as ix:
+                cnxn = ix.open_cnxn(ix.db)
+                
+                plato = ix.add_creator(
+                    cnxn, 'philosophers', 'name', 'Plato'
+                )
+                
+                aristotle = ix.add_creator(
+                    cnxn, 'philosophers', 'name', 'Aristotle'
+                )
+                
+                apology = ix.add_creature(
+                    cnxn, 'philosophers', plato, 'works', 
+                    'title', 'Apology of Socrates'
+                )
+                
+                symposium = ix.add_creature(
+                    cnxn, 'philosophers', plato, 'works', 
+                    'title', 'Symposium'
+                )
+                
+                republic = ix.add_creature(
+                    cnxn, 'philosophers', plato, 'works', 
+                    'title', 'Republic'
+                )
+                
+                on_the_heavens = ix.add_creature(
+                    cnxn, 'philosophers', aristotle, 'works', 
+                    'title', 'On the Heavens'
+                )
+                
+                topics = ix.add_creature(
+                    cnxn, 'philosophers', aristotle, 'works', 
+                    'title', 'Topics'
+                )
+                
+                on_the_soul = ix.add_creature(
+                    cnxn, 'philosophers', aristotle, 'works', 
+                    'title', 'On the Soul'
+                )
+                
+                ix.add_creature(
+                    cnxn, 'works', apology, 'topics', 'name', 'civics'
+                )
+                
+                ix.add_creature(
+                    cnxn, 'works', symposium, 'topics', 'name', 'love'
+                )
+                
+                ix.add_creature(
+                    cnxn, 'works', republic, 'topics', 'name', 'civics'
+                )
+                
+                ix.add_creature(
+                    cnxn, 'works', on_the_heavens, 'topics', 
+                    'name', 'cosmology'
+                )
+                
+                ix.add_creature(
+                    cnxn, 'works', topics, 'topics', 'name', 'logic'
+                )
+                
+                ix.add_creature(
+                    cnxn, 'works', on_the_soul, 'topics', 'name', 'psychology'
+                )
+                
+                ix.add_creature(
+                    cnxn, 'works', apology, 'topics', 'name', 'civics'
+                )
+                
+                philosophers = ix.get_df(cnxn, 'SELECT * FROM philosophers;')
+                objects += [('philosophers', philosophers)]
+                
+                works = ix.get_df(cnxn, 'SELECT * FROM works;')
+                objects += [('works', works)]
+                
+                topics = ix.get_df(cnxn, 'SELECT * FROM topics;')
+                objects += [('topics', topics)]
+        else:
+            raise ValueError(f'Found no template {template_name}.')
+            
+        return objects
