@@ -2,6 +2,18 @@ RELEASES
 ========
 
 
+`0.0.4 <https://github.com/Perceptua/indexia/releases/tag/v0.0.4>`_
+-------------------------------------------------------------------
+
+**Features:**
+
+* Add ``.readthedocs.yaml`` to configure Read the Docs documentation.
+
+**Bugfixes:**
+
+* Fix Read the Docs import error in ``docs/source/conf.py``.
+
+
 `0.0.3 <https://github.com/Perceptua/indexia/releases/tag/v0.0.3>`_
 -------------------------------------------------------------------
 
