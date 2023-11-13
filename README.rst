@@ -11,7 +11,7 @@ Installation
 Usage
 -----
 
-The example below uses an ``indexia`` template to generate sample tables & data.
+Full documentation available at `Read the Docs <https://indexia.readthedocs.io/en/latest/>`_. The example below uses an ``indexia`` template to generate sample tables & data.
 
 .. code-block:: python
 
