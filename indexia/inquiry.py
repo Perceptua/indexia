@@ -221,7 +221,7 @@ class Tabula:
         '''
         creature_table = (name, {
             'id': 'INTEGER PRIMARY KEY AUTOINCREMENT',
-            attribute: 'TEXT UNIQUE NOT NULL',
+            attribute: 'TEXT NOT NULL',
             f'{creator}_id': 'INTEGER NOT NULL',
             f'FOREIGN KEY ({creator}_id)': Tabula.references(creator, 'id')
         })

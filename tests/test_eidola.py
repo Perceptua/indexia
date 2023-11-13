@@ -1,4 +1,4 @@
-from indexia.eidola import Maker
+from indexia.eidola import Maker, Templates
 from indexia.indexia import Indexia
 import os
 import pandas as pd
@@ -79,6 +79,32 @@ class TestEidola(ut.TestCase):
     def tearDown(self):
         try:
             os.remove(self.test_db)
+        except:
+            pass
+        
+        
+class TestTemplates(ut.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.test_db = 'tests/data/test_eidola.db'
+        cls.generator = Templates(cls.test_db)
+    
+    def testBuildTemplate(self):
+        self.assertRaises(
+            ValueError, self.generator.build_template, 
+            'fake_template'
+        )
+        
+        objects = self.generator.build_template('philosophy')
+        self.assertEqual(len(objects), 3)
+        species = [o[0] for o in objects]
+        exp_species = ['philosophers', 'works', 'topics']
+        self.assertEqual(species, exp_species)
+        
+    @classmethod
+    def tearDownClass(cls):
+        try:
+            os.remove(cls.test_db)
         except:
             pass
 
