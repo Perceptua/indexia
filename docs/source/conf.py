@@ -13,12 +13,12 @@
 import os
 import sys
 
-project_root = os.path.join(
+package_dir = os.path.join(
     os.path.abspath(__file__), 
-    '..', '..', '..',
+    '..', '..', '..', 'indexia'
 )
 
-sys.path.insert(0, project_root)
+sys.path.insert(0, package_dir)
 
 # -- Project information -----------------------------------------------------
 
