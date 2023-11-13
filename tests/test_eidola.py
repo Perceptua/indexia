@@ -89,6 +89,11 @@ class TestTemplates(ut.TestCase):
         cls.test_db = 'tests/data/test_eidola.db'
         cls.generator = Templates(cls.test_db)
     
+    def testShowTemplates(self):
+        templates = self.generator.show_templates()
+        exp_templates = ['philosophy', 'zettelkasten']
+        self.assertEqual(list(templates.keys()), exp_templates)
+    
     def testBuildTemplate(self):
         self.assertRaises(
             ValueError, self.generator.build_template, 
@@ -97,8 +102,14 @@ class TestTemplates(ut.TestCase):
         
         objects = self.generator.build_template('philosophy')
         self.assertEqual(len(objects), 3)
-        species = [o[0] for o in objects]
+        species = list(objects.keys())
         exp_species = ['philosophers', 'works', 'topics']
+        self.assertEqual(species, exp_species)
+        
+        objects = self.generator.build_template('zettelkasten')
+        self.assertEqual(len(objects), 4)
+        species = list(objects.keys())
+        exp_species = ['scribes', 'libraries', 'cards', 'keywords']
         self.assertEqual(species, exp_species)
         
     @classmethod
