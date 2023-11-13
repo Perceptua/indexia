@@ -19,7 +19,6 @@ The example below uses an ``indexia`` template to generate sample tables & data.
 
     db = 'test.db'
     objects = Templates(db).build_template('philosophy')
-    philosphers = objects[0][1]
     
 Update & manage ``indexia`` data with ``indexia.indexia.Indexia``:
 
@@ -27,6 +26,7 @@ Update & manage ``indexia`` data with ``indexia.indexia.Indexia``:
 
     from indexia.indexia import Indexia
     
+    philosophers = objects['philosophers']
     aristotle = philosphers[philosphers.name == 'Aristotle']
 
     with Indexia(db) as ix:
@@ -72,5 +72,3 @@ Render sample data as a network graph with ``indexia.schemata.Diktua``:
     diktua = Diktua(topics, 'expression', 'creator_id')
     diktua.style_nodes()
     diktua.plot(plot_path='diktua.html')
-    
-For more methods, `read the module docs <modules.html>`_.
