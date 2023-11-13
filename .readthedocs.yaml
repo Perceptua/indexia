@@ -7,7 +7,6 @@ build:
   jobs:
     pre_build:
       - pip install indexia
-      - sphinx-apidoc -o docs/source indexia/
 
 sphinx:
    configuration: docs/source/conf.py
