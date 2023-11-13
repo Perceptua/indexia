@@ -2,6 +2,14 @@ RELEASES
 ========
 
 
+`0.0.3 <https://github.com/Perceptua/indexia/releases/tag/v0.0.3>`_
+-------------------------------------------------------------------
+
+**Bugfixes:**
+
+* Fix ``README.rst`` codeblocks & reconfigure ``pyproject.toml`` for first PYPI release.
+
+
 `0.0.2 <https://github.com/Perceptua/indexia/releases/tag/v0.0.2>`_
 -------------------------------------------------------------------
 
