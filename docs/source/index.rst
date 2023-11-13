@@ -8,3 +8,9 @@ indexia documentation
    modules
    readme
    releases
+
+search
+======
+
+* :ref:`genindex`
+* :ref:`search`
