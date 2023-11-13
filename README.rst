@@ -72,5 +72,3 @@ Render sample data as a network graph with ``indexia.schemata.Diktua``:
     diktua = Diktua(topics, 'expression', 'creator_id')
     diktua.style_nodes()
     diktua.plot(plot_path='diktua.html')
-    
-For more methods, `read the module docs <modules.html>`_.
