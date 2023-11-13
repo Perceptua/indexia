@@ -1,8 +1,17 @@
 RELEASES
 ========
 
-`0.0.0 <https://github.com/Perceptua/indexia/tree/release/0.0.0>`_
-------------------------------------------------------------------
+
+`0.0.1 <https://github.com/Perceptua/indexia/releases/tag/v0.0.1>`_
+-------------------------------------------------------------------
+
+**Features:**
+
+* ``eidolon.Templates`` class to create sample data
+
+
+`0.0.0 <https://github.com/Perceptua/indexia/releases/tag/v0.0.0>`_
+-------------------------------------------------------------------
 
 **Features:**
 
