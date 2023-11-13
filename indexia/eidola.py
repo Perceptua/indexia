@@ -202,6 +202,25 @@ class Maker:
         return fathers, sons, grandsons, great_grandsons
     
     def get(self):
+        '''
+        Get test data.
+
+        Returns
+        -------
+        fathers : list(pandas.DataFrame)
+            List containing a single dataframe of creator 
+            data.
+        sons : list(pandas.DataFrame)
+            List containing species_per_genus dataframes 
+            of creature data.
+        grandsons : list(pandas.DataFrame)
+            List containing (species_per_genus)^2 dataframes 
+            of creature data.
+        great_grandsons : list(pandas.DataFrame)
+            List containing (species_per_genus)^3 dataframes 
+            of creature data.
+
+        '''
         with Indexia(self.test_db) as ix:
             cnxn = ix.open_cnxn(ix.db)
             sql = 'SELECT * FROM creators;'
@@ -224,7 +243,7 @@ class Maker:
                         great_grandsons += [ix.get_df(cnxn, sql)]
                         
             return fathers, sons, grandsons, great_grandsons
-        
+
 
 class Templates:
     '''
