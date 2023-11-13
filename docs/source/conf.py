@@ -12,16 +12,15 @@
 
 import os
 import sys
-sys.path.insert(0, os.path.abspath('.'))
 
+sys.path.insert(0, os.path.abspath('.'))
 
 # -- Project information -----------------------------------------------------
 
-import indexia
-project = indexia.__name__
-copyright = f'2023, {indexia.__author__}'
-author = indexia.__author__
-version = indexia.__version__
+project = 'indexia'
+copyright = '2023, Aphorikles'
+author = 'Aphorikles'
+version = '0.0.4'
 
 # -- General configuration ---------------------------------------------------
 
