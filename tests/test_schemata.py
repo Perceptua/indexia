@@ -144,8 +144,10 @@ class TestDendron(ut.TestCase):
             'creatures_0_0_0', self.great_grandsons[0].query('id == 1')
         )
         
-        for exp_kind, exp_being in [exp_son, exp_grandson, exp_great_grandson]:
-            exp_path = f".//{exp_kind}[@id='{exp_being.id.max()}']"
+        exp_creatures = [exp_son, exp_grandson, exp_great_grandson]
+        
+        for exp_species, exp_creature in exp_creatures:
+            exp_path = f".//{exp_species}[@id='{exp_creature.id.max()}']"
             creator_element = rendered.find(exp_path)
             self.assertIsInstance(creator_element, et.Element)
     

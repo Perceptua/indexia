@@ -150,15 +150,15 @@ class Dendron:
         self.db = db
         self.trunk = ScalaNaturae(self.db)
         
-    def render_image(self, kind, beings, root=et.Element('root')):
+    def render_image(self, genus, creators, root=et.Element('root')):
         '''
         Render the XML tree.
 
         Parameters
         ----------
-        kind : str
+        genus : str
             Name of the top-level table.
-        beings : pandas.DataFrame
+        creators : pandas.DataFrame
             One or more rows of the top-level table to 
             render as XML.
         root : xml.etree.ElementTree.Element, optional
@@ -173,20 +173,20 @@ class Dendron:
             An XML element tree of indexia data.
 
         '''
-        for i, being in beings.iterrows():
-            attrs = {c: being[c] for c in beings.columns}
+        for i, creator in creators.iterrows():
+            attrs = {c: creator[c] for c in creators.columns}
             
-            creatures = self.trunk.downward(
-                kind, pd.DataFrame(data=attrs, index=[0])
+            next_rung = self.trunk.downward(
+                genus, pd.DataFrame(data=attrs, index=[0])
             )
             
             branch = et.SubElement(
-                root, kind, attrib={a: str(attrs[a]) for a in attrs}
+                root, genus, attrib={a: str(attrs[a]) for a in attrs}
             )
             
-            for creature_kind, creature_beings in creatures:
+            for species, creatures in next_rung:
                 self.render_image(
-                    creature_kind, creature_beings, root=branch
+                    species, creatures, root=branch
                 )
         
         image = et.ElementTree(root)
