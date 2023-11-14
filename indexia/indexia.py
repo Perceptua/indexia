@@ -1,6 +1,4 @@
 '''
-indexia
-
 Defines core operations on indexia objects.
 
 '''

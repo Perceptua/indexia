@@ -1,6 +1,4 @@
 '''
-inquiry
-
 Generate SQL for indexia database oprerations.
 
 '''
