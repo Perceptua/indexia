@@ -1,12 +1,9 @@
 '''
-schemata
-
 Defines tree & graph representations of indexia data.
 
 '''
 from indexia.indexia import Indexia
 from pyvis.network import Network
-import copy
 import itertools
 import networkx as nx
 import os
@@ -239,9 +236,9 @@ class Corpus:
     Represent indexia data as a dataframe.
     
     '''
-    def __init__(self, db, genus, creator, max_depth=10):
+    def __init__(self, db, genus, creators, max_depth=10):
         '''
-        Creates a Corpus instance for the given creator.
+        Creates a Corpus instance for the given creator data.
         
         Sets the spine attribute to a ScalaNaturae instance 
         for descending the hierarchy of creator data.
@@ -252,8 +249,8 @@ class Corpus:
             Path to the indexia database file.
         genus : str
             Name of the creator (parent) table.
-        creator : pandas.DataFrame
-            Single-row dataframe of creator entity data.
+        creators : pandas.DataFrame
+            Dataframe of creator entity data.
         max_depth : int, optional
             Maximum number of levels to descend when assembling 
             the corpus. The default is 10.
@@ -265,7 +262,7 @@ class Corpus:
         '''
         self.db = db
         self.genus = genus
-        self.creator = creator
+        self.creators = creators
         self.max_depth = max_depth
         self.spine = ScalaNaturae(self.db)
     
@@ -389,7 +386,7 @@ class Corpus:
     
     def assemble(self):
         '''
-        Assemble the corpus of the instance's creator entity.
+        Assemble the corpus of each of the creator entities.
 
         Returns
         -------
@@ -399,8 +396,20 @@ class Corpus:
             specified by max_depth.
 
         '''
-        head = self.make_member(None, pd.DataFrame(), self.genus, self.creator)
-        body = pd.concat(self.make_limbs(self.genus, self.creator, 0), axis=0)
+        head = self.make_member(
+            None, pd.DataFrame(), self.genus, self.creators
+        )
+        
+        body = []
+        
+        for i in range(self.creators.shape[0]):
+            creator = self.creators.iloc[[i]]
+            
+            body += [pd.concat(self.make_limbs(
+                self.genus, creator, 0
+            ), axis=0)]
+            
+        body = pd.concat(body, axis=0)
         corpus = pd.concat([head, body], axis=0)
         corpus.index = [i for i in range(corpus.shape[0])]
         
