@@ -172,15 +172,15 @@ class Tabula:
     Defines columns & data types of indexia tables.
     
     '''
-    def get_creator_table(name, attribute):
+    def get_creator_table(genus, trait):
         '''
-        Get name & columns of a creator (unreferenced) table.
+        Get name & columns of a creator (parent) table.
 
         Parameters
         ----------
-        name : str
-            Name of the creator table.
-        attribute : str
+        genus : str
+            Name of the creator (parent) table.
+        trait : str
             Name of the creator's text attribute.
 
         Returns
@@ -190,16 +190,16 @@ class Tabula:
             & whose second is a dict of table columns & data types.
 
         '''
-        creator_table = (name, {
+        creator_table = (genus, {
             'id': 'INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL',
-            attribute: 'TEXT UNIQUE NOT NULL'
+            trait: 'TEXT UNIQUE NOT NULL'
         })
         
         return creator_table
     
-    def get_creature_table(creator, name, attribute):
+    def get_creature_table(creator, species, trait):
         '''
-        Get name & columns of a creature (referenced) table.
+        Get name & columns of a creature (child) table.
 
         Parameters
         ----------
@@ -217,9 +217,9 @@ class Tabula:
             & whose second is a dict of table columns & data types.
 
         '''
-        creature_table = (name, {
+        creature_table = (species, {
             'id': 'INTEGER PRIMARY KEY AUTOINCREMENT',
-            attribute: 'TEXT NOT NULL',
+            trait: 'TEXT NOT NULL',
             f'{creator}_id': 'INTEGER NOT NULL',
             f'FOREIGN KEY ({creator}_id)': Tabula.references(creator, 'id')
         })
