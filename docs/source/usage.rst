@@ -187,3 +187,57 @@ looks like this:
             </works>
         </philosophers> 
     </root>
+    
+Custom workflows
+----------------
+
+The methods of ``indexia`` modules can be wrapped in other functions to create 
+workflows for your projects. Below is an example of a script to add cards to a 
+Zettelkasten project. Running this script from a command line tool gives a 
+minimalist interface for creating project data. Other frameworks & applications
+can be leveraged to make full-fledged applications.
+
+.. code-block:: python
+
+    from indexia.indexia import Indexia
+
+
+    def get_library(ix, cnxn, scribe, libronym):
+        _, libraries = ix.get_creatures(cnxn, 'scribes', scribe)[0]
+        library = libraries[libraries.libronym == libronym]
+        
+        return library
+
+    def add_card(ix, cnxn):
+        pseudonym = input('enter scribe pseudonym: ')
+        libronym = input('enter library libronym: ')
+        created = input('enter card datetime: ')
+        keywords = input('enter semi-colon-separated keywords: ')
+        keywords = keywords.split(';')
+        
+        scribe = ix.get_by_trait(cnxn, 'scribes', pseudonym)
+        library = get_library(ix, cnxn, scribe, libronym)
+        
+        card = ix.add_creature(
+            cnxn, 'libraries', library, 'cards', 'created', created
+        )
+            
+        for k in keywords:
+            ix.add_creature(
+                cnxn, 'cards', card, 'logonyms', 'logonym', k    
+            )
+        
+        return card
+
+    def main():
+        db = 'indexia.db'
+        
+        with Indexia(db) as ix:
+            cnxn = ix.open_cnxn(db)
+            card = add_card(ix, cnxn)
+            
+        return card
+
+
+    if __name__ == '__main__':
+        card = main()
