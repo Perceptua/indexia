@@ -1,5 +1,20 @@
-RELEASES
+Releases
 ========
+
+
+`0.0.5 <https://github.com/Perceptua/indexia/releases/tag/v0.0.5>`_
+-------------------------------------------------------------------
+
+**Features:**
+
+* Update documentation layout, expand on usage & applications.
+* Add glossary of ``indexia`` terms.
+* ``schemata.Corpus``: Enable creation of multi-creator corpus dataframes.
+
+**Bugfixes:**
+
+* Update variable names in ``schemata.Dendron`` to align with other classes.
+* Update variable names in ``inquiry.Tabula`` to align with other classes.
 
 
 `0.0.4 <https://github.com/Perceptua/indexia/releases/tag/v0.0.4>`_
@@ -27,7 +42,7 @@ RELEASES
 
 **Features:**
 
-* Add 'zettelkasten' template to ``indexia.eidola.Templates``
+* Add 'zettelkasten' template to ``indexia.eidola.Templates``.
 
 
 `0.0.1 <https://github.com/Perceptua/indexia/releases/tag/v0.0.1>`_
@@ -35,7 +50,7 @@ RELEASES
 
 **Features:**
 
-* ``eidola.Templates`` class to create sample data
+* ``eidola.Templates`` class to create sample data.
 
 
 `0.0.0 <https://github.com/Perceptua/indexia/releases/tag/v0.0.0>`_
@@ -43,7 +58,7 @@ RELEASES
 
 **Features:**
 
-* ``indexia`` module to create & manage hierarchical data structures
-* ``inquiry`` module to support dynamic SQL generation
-* ``schemata`` module to create XML, dataframe, & network graph representations of indexia data
-* ``eidola`` module to create sample indexia data
+* ``indexia`` module to create & manage hierarchical data structures.
+* ``inquiry`` module to support dynamic SQL generation.
+* ``schemata`` module to create XML, dataframe, & network graph representations of indexia data.
+* ``eidola`` module to create sample indexia data.
