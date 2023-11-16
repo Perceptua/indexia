@@ -7,7 +7,6 @@ name = "indexia"
 version = "1.0.1"
 description = "Collections & connections. A virtual Zettelkasten."
 readme = "README.rst"
-documentation = "https://indexia.readthedocs.io/en/latest/"
 requires-python = ">=3.8"
 dynamic = [
     "dependencies",
@@ -25,4 +24,5 @@ classifiers = [
 
 [project.urls]
 "Homepage" = "https://github.com/Perceptua/indexia"
-"Bug Tracker" = "https://github.com/Perceptua/indexia/issues"
+"Bugs" = "https://github.com/Perceptua/indexia/issues"
+"Documentation" = "https://indexia.readthedocs.io/en/latest/"
