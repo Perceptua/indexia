@@ -107,6 +107,61 @@ class Indexia:
         for db in self.cnxns:
             self.close_cnxn(db)
             
+    def get_df(self, cnxn, sql, expected_columns=None, raise_errors=False):
+        '''
+        Get result of SQL query as a pandas dataframe.
+        In the event of an exception, return an empty
+        dataframe.
+
+        Parameters
+        ----------
+        cnxn : sqlite3.Connection
+            Connection to the database.
+        sql : str
+            SQL to be executed by pandas.read_sql.
+        expected_columns : list(str), optional
+            List of expected columns. If raise_errors is True 
+            & the dataframe columns do not match expected_columns, 
+            a ValueError is raised. The default is None.
+        raise_errors : bool, optional
+            Whether to raise exceptions encountered during 
+            execution. The default is False.
+
+        Raises
+        ------
+        error
+            If raise_errors is True, raise any error encountered 
+            during execution.
+
+        Returns
+        -------
+        df : pandas.DataFrame
+            A dataframe containing the results of the 
+            SQL query.
+
+        '''
+        error = None
+        
+        try:
+            df = pd.read_sql(sql, cnxn)
+            
+            if expected_columns and set(df.columns) != set(expected_columns):
+                err_msg = ' '.join([
+                    f'expected columns {expected_columns}.',
+                    f'found {list(df.columns)}'
+                ])
+                
+                error = ValueError(err_msg)
+        
+        except Exception as err:
+            error = err
+            df = pd.DataFrame(columns=expected_columns)
+            
+        if error and raise_errors:
+            raise error
+            
+        return df
+            
     def get_or_create(self, cnxn, tablename, dtype, cols, vals, retry=True):
         '''
         Get entities from an existing table, or create 
@@ -149,7 +204,7 @@ class Indexia:
         
         where = Inquiry.where(cols, vals)
         select = Inquiry.select(tablename, ['*'], where)
-        result = pd.read_sql(select, cnxn)
+        result = self.get_df(cnxn, select)
         
         if result.empty and retry:
             insert = Inquiry.insert(tablename, [tuple(vals)], columns=cols)
@@ -333,7 +388,7 @@ class Indexia:
         where = Inquiry.where(['type'], ['table'])
         where = f"{where} AND name NOT LIKE 'sqlite_%'"
         sql = Inquiry.select('sqlite_schema', ['name'], where)
-        tables = list(pd.read_sql(sql, cnxn).name)
+        tables = list(self.get_df(cnxn, sql).name)
         
         return tables
     
@@ -356,7 +411,7 @@ class Indexia:
         '''
         pragma = f'PRAGMA TABLE_INFO({tablename});'
         
-        columns = pd.read_sql(pragma, cnxn)[
+        columns = self.get_df(cnxn, pragma)[
             ['name', 'type', 'notnull', 'pk']
         ].rename(columns={
             'name': 'column_name',
@@ -367,62 +422,75 @@ class Indexia:
         
         return columns
     
-    def get_df(self, cnxn, sql, expected_columns=None, raise_errors=False):
+    def get_trait(self, cnxn, kind):
         '''
-        Get result of SQL query as a pandas dataframe.
-        In the event of an exception, return an empty
-        dataframe.
+        Gets the trait (attribute) column of the given 
+        kind.
 
         Parameters
         ----------
         cnxn : sqlite3.Connection
-            Connection to the database.
-        sql : str
-            SQL to be executed by pandas.read_sql.
-        expected_columns : list(str), optional
-            List of expected columns. If raise_errors is True 
-            & the dataframe columns do not match expected_columns, 
-            a ValueError is raised. The default is None.
-        raise_errors : bool, optional
-            Whether to raise exceptions encountered during 
-            execution. The default is False.
+            A database connection.
+        kind : str
+            Name of the table.
 
         Raises
         ------
-        error
-            If raise_errors is True, raise any error encountered 
-            during execution.
+        ValueError
+            If no trait column is identified, or if more 
+            than one trait column is identified, raise a 
+            ValueError.
 
         Returns
         -------
-        df : pandas.DataFrame
-            A dataframe containing the results of the 
-            SQL query.
+        trait : str
+            Name of the trait column.
 
         '''
-        error = None
+        columns = self.get_table_columns(cnxn, kind).column_name
+        traits = [c for c in columns if c != 'id' and not c.endswith('_id')]
         
-        try:
-            df = pd.read_sql(sql, cnxn)
+        if not traits or len(traits) > 1:
+            err_msg = 'Found multiple trait columns'
+            err_msg = err_msg if traits else 'Found no trait column'
+            err_msg = f'{err_msg} for {kind}.'
+            raise ValueError(err_msg)
             
-            if expected_columns and set(df.columns) != set(expected_columns):
-                err_msg = ' '.join([
-                    f'expected columns {expected_columns}.',
-                    f'found {list(df.columns)}'
-                ])
-                
-                error = ValueError(err_msg)
+        trait = traits[0]
         
-        except Exception as err:
-            error = err
-            df = pd.DataFrame(columns=expected_columns)
-            
-        if error and raise_errors:
-            raise error
-            
-        return df
+        return trait
     
-    def get_by_id(self, cnxn, tablename, entity_id):
+    def get_by_trait(self, cnxn, kind, expr):
+        '''
+        Get being(s) by the text attribute value.
+        
+        Note that since values of the trait column need not be 
+        unique, it is possible that the dataframe returned 
+        will contain more than one being.
+
+        Parameters
+        ----------
+        cnxn : sqlite3.Connection
+            A database connection.
+        kind : str
+            Name of the table to query.
+        expr : str
+            Value of the being's trait (text attribute).
+
+        Returns
+        -------
+        being : pandas.DataFrame
+            Dataframe of one or more beings.
+
+        '''
+        trait = self.get_trait(cnxn, kind)
+        where = Inquiry.where([trait], [expr])
+        select = Inquiry.select(kind, ['*'], where)
+        being = self.get_df(cnxn, select)
+        
+        return being
+    
+    def get_by_id(self, cnxn, kind, being_id):
         '''
         Get an entity by its id.
 
@@ -430,22 +498,22 @@ class Indexia:
         ----------
         cnxn : sqlite3.Connection
             A database connection.
-        tablename : str
+        kind : str
             Name of the table to query.
-        entity_id : str or int
+        being_id : int
             Value of the entity's id.
 
         Returns
         -------
-        result : pandas.DataFrame
-            A dataframe containing the query results.
+        being : pandas.DataFrame
+            Dataframe of being data.
 
         '''
-        where = Inquiry.where(['id'], [entity_id])
-        select = Inquiry.select(tablename, ['*'], where)
-        result = pd.read_sql(select, cnxn)
+        where = Inquiry.where(['id'], [being_id])
+        select = Inquiry.select(kind, ['*'], where)
+        being = self.get_df(cnxn, select)
         
-        return result
+        return being
     
     def get_creator_genus(self, cnxn, species):
         '''
@@ -472,7 +540,7 @@ class Indexia:
 
         '''
         pragma = f'PRAGMA FOREIGN_KEY_LIST({species});'
-        foreign_keys = pd.read_sql(pragma, cnxn)
+        foreign_keys = self.get_df(cnxn, pragma)
         genus = None
         
         if foreign_keys.shape[0] > 1:
@@ -541,8 +609,8 @@ class Indexia:
         if genus:
             creator_id = creature[f'{genus}_id'].values[0]
             where = Inquiry.where(['id'], [creator_id])
-            sql = Inquiry.select(genus, ['*'], where)
-            creator = [(genus, pd.read_sql(sql, cnxn))]
+            select = Inquiry.select(genus, ['*'], where)
+            creator = [(genus, self.get_df(cnxn, select))]
         
         return creator
     
@@ -573,9 +641,9 @@ class Indexia:
         
         for s in species:
             where = Inquiry.where([f'{genus}_id'], [creator_id])
-            sql = Inquiry.select(s, ['*'], where)
+            select = Inquiry.select(s, ['*'], where)
             
-            members = pd.read_sql(sql, cnxn).apply(
+            members = self.get_df(cnxn, select).apply(
                 pd.to_numeric, errors='ignore'
             )
             

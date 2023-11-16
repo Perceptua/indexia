@@ -12,7 +12,7 @@ class TestIndexia(ut.TestCase):
         cls.test_db = 'tests/data/test_indexia.db'
         
     @classmethod
-    def getTestObjects(cls):
+    def getTestTables(cls):
         creator = Tabula.get_creator_table(
             'creator', 'name'
         )
@@ -24,7 +24,7 @@ class TestIndexia(ut.TestCase):
         return creator, creature
 
     def setUp(self):
-        creator, creature = self.getTestObjects()
+        creator, creature = self.getTestTables()
         self.creator_table, self.creator_dtype = creator
         self.creature_table, self.creature_dtype = creature
         self.trait = 'name'
@@ -74,6 +74,54 @@ class TestIndexia(ut.TestCase):
             
             for db in ix.cnxns:
                 self.assertEqual(len(ix.cnxns[db]), 0)
+                
+    def testGetDF(self):
+        creator_cols = ['id', 'name']
+        valid_sql = f'SELECT * FROM {self.creator_table};'
+        invalid_sql = 'SELECT * FROM nonexistent_table;'
+        
+        with Indexia(self.test_db) as ix:
+            cnxn = ix.open_cnxn(ix.db)
+            
+            expected_columns = None
+            raise_errors = False
+            df = ix.get_df(cnxn, valid_sql, expected_columns, raise_errors)
+            self.assertIsInstance(df, pd.DataFrame)
+            self.assertEqual(list(df.columns), creator_cols)
+            
+            df = ix.get_df(cnxn, invalid_sql, expected_columns, raise_errors)
+            self.assertIsInstance(df, pd.DataFrame)
+            self.assertEqual(list(df.columns), [])
+            
+            expected_columns = None
+            raise_errors = True
+            df = ix.get_df(cnxn, valid_sql, expected_columns, raise_errors)
+            self.assertIsInstance(df, pd.DataFrame)
+            self.assertEqual(list(df.columns), creator_cols)
+            
+            self.assertRaises(
+                pd.io.sql.DatabaseError, ix.get_df, 
+                cnxn, invalid_sql, expected_columns, raise_errors
+            )
+            
+            expected_columns = ['invalid_column']
+            raise_errors = False
+            df = ix.get_df(cnxn, valid_sql, expected_columns, raise_errors)
+            self.assertEqual(list(df.columns), creator_cols)
+            
+            expected_columns = ['invalid_column']
+            raise_errors = True
+            
+            self.assertRaises(
+                ValueError, ix.get_df, 
+                cnxn, valid_sql, expected_columns, raise_errors
+            )
+            
+            expected_columns = creator_cols
+            raise_errors = True
+            df = ix.get_df(cnxn, valid_sql, expected_columns, raise_errors)
+            self.assertEqual(list(df.columns), creator_cols)
+            self.assertGreaterEqual(df.shape[0], 1)   
                 
     def testGetOrCreate(self):
         with Indexia(self.test_db) as ix:
@@ -185,55 +233,34 @@ class TestIndexia(ut.TestCase):
             })
             
             pd.testing.assert_frame_equal(column_data, exp_column_data)
-    
-    def testGetDF(self):
-        creator_cols = ['id', 'name']
-        valid_sql = f'SELECT * FROM {self.creator_table};'
-        invalid_sql = 'SELECT * FROM nonexistent_table;'
+            
+    def testGetTrait(self):
+        with Indexia(self.test_db) as ix:
+            cnxn = ix.open_cnxn(ix.db)
+            trait = ix.get_trait(cnxn, self.creator_table)
+            self.assertEqual(trait, self.trait)
         
+            trait = ix.get_trait(cnxn, self.creature_table)
+            self.assertEqual(trait, self.trait)
+        
+            self.assertRaises(ValueError, ix.get_trait, cnxn,'exp_fail')
+    
+    def testGetByTrait(self):
         with Indexia(self.test_db) as ix:
             cnxn = ix.open_cnxn(ix.db)
             
-            expected_columns = None
-            raise_errors = False
-            df = ix.get_df(cnxn, valid_sql, expected_columns, raise_errors)
-            self.assertIsInstance(df, pd.DataFrame)
-            self.assertEqual(list(df.columns), creator_cols)
-            
-            df = ix.get_df(cnxn, invalid_sql, expected_columns, raise_errors)
-            self.assertIsInstance(df, pd.DataFrame)
-            self.assertEqual(list(df.columns), [])
-            
-            expected_columns = None
-            raise_errors = True
-            df = ix.get_df(cnxn, valid_sql, expected_columns, raise_errors)
-            self.assertIsInstance(df, pd.DataFrame)
-            self.assertEqual(list(df.columns), creator_cols)
-            
-            self.assertRaises(
-                pd.io.sql.DatabaseError, ix.get_df, 
-                cnxn, invalid_sql, expected_columns, raise_errors
+            creator_retrieved = ix.get_by_trait(
+                cnxn, self.creator_table, self.creator_expr
             )
             
-            expected_columns = ['invalid_column']
-            raise_errors = False
-            df = ix.get_df(cnxn, valid_sql, expected_columns, raise_errors)
-            self.assertEqual(list(df.columns), creator_cols)
+            pd.testing.assert_frame_equal(self.creator_data, creator_retrieved)
             
-            expected_columns = ['invalid_column']
-            raise_errors = True
-            
-            self.assertRaises(
-                ValueError, ix.get_df, 
-                cnxn, valid_sql, expected_columns, raise_errors
+            expect_empty = ix.get_by_id(
+                cnxn, self.creator_table, f'{self.creator_expr}_empty'
             )
             
-            expected_columns = creator_cols
-            raise_errors = True
-            df = ix.get_df(cnxn, valid_sql, expected_columns, raise_errors)
-            self.assertEqual(list(df.columns), creator_cols)
-            self.assertGreaterEqual(df.shape[0], 1)    
-    
+            self.assertTrue(expect_empty.empty)
+                
     def testGetByID(self):
         with Indexia(self.test_db) as ix:
             cnxn = ix.open_cnxn(ix.db)

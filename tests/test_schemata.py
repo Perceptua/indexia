@@ -207,30 +207,14 @@ class TestCorpus(ut.TestCase):
         return pd.DataFrame(columns=columns)
         
     def testGetTrait(self):
-        exp_pass = self.make_frame(['id', self.trait])
-        trait = self.corpus.get_trait('test_species', exp_pass)
+        trait = self.corpus.get_trait('creatures_0')
         self.assertEqual(trait, self.trait)
         
-        exp_pass = self.make_frame(['id', self.trait, 'creators_id'])
-        trait = self.corpus.get_trait('test_species', exp_pass)
+        trait = self.corpus.get_trait('creatures_0_0')
         self.assertEqual(trait, self.trait)
         
-        exp_fail = self.make_frame(['id', 'creators_id'])
+        self.assertRaises(ValueError, self.corpus.get_trait, 'exp_fail')
         
-        self.assertRaises(
-            ValueError, self.corpus.get_trait, 
-            'test_species', exp_fail
-        )
-        
-        exp_fail = self.make_frame([
-            'id', self.trait, 'extra_trait', 'creators_id'
-        ])
-        
-        self.assertRaises(
-            ValueError, self.corpus.get_trait, 
-            'test_species', exp_fail
-        )
-     
     def testMakeMember(self):
         creator = self.creators.query('id == 1')
         
