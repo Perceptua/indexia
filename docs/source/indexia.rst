@@ -1,9 +1,6 @@
 indexia package
 ===============
 
-Submodules
-----------
-
 indexia.eidola module
 ---------------------
 
@@ -32,14 +29,6 @@ indexia.schemata module
 -----------------------
 
 .. automodule:: indexia.schemata
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-Module contents
----------------
-
-.. automodule:: indexia
    :members:
    :undoc-members:
    :show-inheritance:
