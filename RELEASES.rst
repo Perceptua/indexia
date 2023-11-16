@@ -2,6 +2,18 @@ Releases
 ========
 
 
+`1.0.0 <https://github.com/Perceptua/indexia/releases/tag/v1.0.0>`_
+-------------------------------------------------------------------
+
+**Features:**
+
+* Version 1.0.0 will constitute first post-beta version
+
+**Bugfixes:**
+
+* Make README links PYPI-friendly
+
+
 `0.0.5 <https://github.com/Perceptua/indexia/releases/tag/v0.0.5>`_
 -------------------------------------------------------------------
 
