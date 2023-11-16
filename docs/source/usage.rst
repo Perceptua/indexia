@@ -1,6 +1,9 @@
 Usage
 =====
 
+Create & manage hierarchical data
+---------------------------------
+
 This example employs a template to generate sample data:
 
 .. code-block:: python
@@ -89,7 +92,10 @@ Once objects have been generated, they can be updated & managed with
             trait='name', 
             expr='dreams'
         )
-    
+
+Inpect & display data
+---------------------
+  
 To view the full data hierarchy under a given set of creator entities, create 
 a dataframe using ``schemata.Corpus``:
 

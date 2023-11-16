@@ -1,6 +1,9 @@
 Applications
 ============
 
+Zettelkasten
+------------
+
 ``indexia`` was originally designed for projects which employ the 
 `Zettelkasten <https://en.wikipedia.org/wiki/Zettelkasten>`_, or "slip box", 
 method of notetaking. A template data structure for these projects is available 
@@ -26,6 +29,9 @@ The tables in this template are designed to answer questions about the project:
     alphanumeric IDs, or absolutely if it uses datetime IDs.
     
 * ``keywords``: *What?* What information does the document contain?
+
+Generalization
+--------------
 
 This out-of-the-box Zettelkasten is a useful application of ``indexia``, but it 
 is not the only one. The ``'zettelkasten'`` template is only one example of a 
