@@ -1,16 +1,15 @@
-indexia documentation
-=====================
+.. include:: ../../README.rst
 
 .. toctree::
-   :maxdepth: 2
+   :hidden:
    :caption: Contents:
    
+   glossary
    modules
-   readme
    releases
 
-search
-======
+Index
+-----
 
 * :ref:`genindex`
 * :ref:`search`

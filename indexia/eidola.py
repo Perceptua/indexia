@@ -1,6 +1,4 @@
 '''
-eidola
-
 Make sample creators & creatures.
 
 '''
