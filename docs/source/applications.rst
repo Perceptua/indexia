@@ -31,7 +31,7 @@ This out-of-the-box Zettelkasten is a useful application of ``indexia``, but it
 is not the only one. The ``'zettelkasten'`` template is only one example of a 
 general, hierarchical data model employed by the ``indexia`` package. Another 
 application of this model, cataloging philosophers & their works, can be seen 
-in `Usage`_ above.
+in :doc:`usage`.
 
 In general, ``indexia`` is well suited to any project involving 
 `hierarchical data <https://en.wikipedia.org/wiki/Hierarchical_database_model>`_ 
@@ -68,4 +68,4 @@ Future releases may allow for greater flexibility. Also note that although the
 relationships between ``indexia`` tables are hierarchical in nature, the 
 implementation uses foreign keys in a ``sqlite`` database (i.e., ``indexia`` is
 not a pure implementation of the hierarchical database model). For table 
-definitions & SQL operations, see ``inquiry`` in `Reference <modules.html>`_.
+definitions & SQL operations, see ``inquiry`` in :doc:`modules`.
