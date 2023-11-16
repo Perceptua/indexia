@@ -3,9 +3,9 @@ indexia
 
 Collections & connections. A virtual Zettelkasten.
 
-For source documentation, see :doc:`modules`. For definitions of ``indexia`` 
-terms, see the :doc:`glossary`. To learn how ``indexia`` can be used, see 
-`Usage`_ & `Applications`_ below.
+For source documentation, see `Reference <modules.html>`_. For definitions 
+of ``indexia`` terms, see the `Glossary <glossary.html>`_. To learn how 
+``indexia`` can be used, see `Usage`_ & `Applications`_ below.
 
 Installation
 ------------
@@ -267,4 +267,4 @@ Future releases may allow for greater flexibility. Also note that although the
 relationships between ``indexia`` tables are hierarchical in nature, the 
 implementation uses foreign keys in a ``sqlite`` database (i.e., ``indexia`` is
 not a pure implementation of the hierarchical database model). For table 
-definitions & SQL operations, see ``inquiry`` in :doc:`modules`.
+definitions & SQL operations, see ``inquiry`` in `Reference <modules.html>`_.
