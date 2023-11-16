@@ -88,41 +88,41 @@ class TestInquiry(ut.TestCase):
 class TestTabula(ut.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.creator = 'scribes'
-        cls.creature = 'libraries'
-        cls.creator_attr = 'pseudonym'
-        cls.creature_attr = 'libronym'
+        cls.genus = 'scribes'
+        cls.species = 'libraries'
+        cls.genus_trait = 'pseudonym'
+        cls.species_trait = 'libronym'
         
     def testGetCreatorTable(self):
-        tablename, cols = Tabula.get_creator_table(
-            self.creator, self.creator_attr
+        genus, cols = Tabula.get_creator_table(
+            self.genus, self.genus_trait
         )
         
-        self.assertEqual(self.creator, tablename)
-        self.assertEqual({'id', self.creator_attr}, set(cols.keys()))
+        self.assertEqual(self.genus, genus)
+        self.assertEqual({'id', self.genus_trait}, set(cols.keys()))
         
     def testGetCreatureTable(self):
-        tablename, cols = Tabula.get_creature_table(
-            self.creator, self.creature, self.creature_attr
+        species, cols = Tabula.get_creature_table(
+            self.genus, self.species, self.species_trait
         )
         
-        self.assertEqual(self.creature, tablename)
+        self.assertEqual(self.species, species)
         
         self.assertEqual({
             'id', 
-            self.creature_attr, 
-            f'{self.creator}_id', 
-            f'FOREIGN KEY ({self.creator}_id)'
+            self.species_trait, 
+            f'{self.genus}_id', 
+            f'FOREIGN KEY ({self.genus}_id)'
         }, set(cols.keys()))
     
     def testReferences(self):
         references = Tabula.references(
-            self.creator, 
-            self.creator_attr
+            self.genus, 
+            self.genus_trait
         )
         
         expected = ' '.join([
-            f'REFERENCES {self.creator}({self.creator_attr})',
+            f'REFERENCES {self.genus}({self.genus_trait})',
             'ON DELETE CASCADE ON UPDATE CASCADE'
         ])
         

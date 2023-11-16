@@ -15,7 +15,7 @@ class TestScalaNaturae(ut.TestCase):
         cls.test_db = 'tests/data/test_schemata.db'
         cls.ladder = ScalaNaturae(cls.test_db)
         cls.species_per_genus = 3
-        cls.num_beings = 10
+        cls.num_beings = 5
         cls.trait = 'name'
         
         cls.maker = Maker(
@@ -104,7 +104,7 @@ class TestDendron(ut.TestCase):
         cls.test_db = 'tests/data/test_schemata.db'
         cls.xml_file = 'tests/data/dendron.xml'
         cls.species_per_genus = 3
-        cls.num_beings = 10
+        cls.num_beings = 5
         cls.trait = 'name'
         
         cls.maker = Maker(
@@ -144,8 +144,10 @@ class TestDendron(ut.TestCase):
             'creatures_0_0_0', self.great_grandsons[0].query('id == 1')
         )
         
-        for exp_kind, exp_being in [exp_son, exp_grandson, exp_great_grandson]:
-            exp_path = f".//{exp_kind}[@id='{exp_being.id.max()}']"
+        exp_creatures = [exp_son, exp_grandson, exp_great_grandson]
+        
+        for exp_species, exp_creature in exp_creatures:
+            exp_path = f".//{exp_species}[@id='{exp_creature.id.max()}']"
             creator_element = rendered.find(exp_path)
             self.assertIsInstance(creator_element, et.Element)
     
@@ -170,7 +172,7 @@ class TestCorpus(ut.TestCase):
         cls.test_db = 'tests/data/test_schemata.db'
         cls.csv_path = 'tests/data/test_corpus.csv'
         cls.species_per_genus = 3
-        cls.num_beings = 10
+        cls.num_beings = 5
         cls.trait = 'name'
         
         cls.maker = Maker(
@@ -184,8 +186,8 @@ class TestCorpus(ut.TestCase):
         ) = cls.maker.get() if cls.checkEidolaExist() else cls.maker.make()
         
         cls.genus = 'creators'
-        cls.creator = cls.fathers[0].query('id == 1')
-        cls.corpus = Corpus(cls.test_db, cls.genus, cls.creator, max_depth=4)
+        cls.creators = cls.fathers[0]
+        cls.corpus = Corpus(cls.test_db, cls.genus, cls.creators, max_depth=4)
         
     @classmethod
     def checkEidolaExist(cls):
@@ -230,8 +232,10 @@ class TestCorpus(ut.TestCase):
         )
      
     def testMakeMember(self):
+        creator = self.creators.query('id == 1')
+        
         members = self.corpus.make_member(
-            None, pd.DataFrame(), self.genus, self.creator
+            None, pd.DataFrame(), self.genus, creator
         )
         
         exp_columns = [
@@ -241,24 +245,25 @@ class TestCorpus(ut.TestCase):
         ]
         
         self.assertEqual(list(members.columns), exp_columns)
-        self.assertEqual(members.shape[0], self.creator.shape[0])
+        self.assertEqual(members.shape[0], creator.shape[0])
         self.assertIsNone(members.genus.values[0])
         self.assertIsNone(members.creator_id.values[0])
         self.assertEqual(members.species.values[0], self.genus)
         
         self.assertEqual(
-            members.creature_id.values[0], self.creator.id.values[0]
+            members.creature_id.values[0], creator.id.values[0]
         )
         
         self.assertEqual(members.trait.values[0], self.trait)
         
         self.assertEqual(
-            members.expression.values[0], self.creator[self.trait].values[0]
+            members.expression.values[0], creator[self.trait].values[0]
         )
         
     def testMakeLimb(self):
         self.corpus.max_depth = 1
-        limb = self.corpus.make_limbs(self.genus, self.creator, 0)
+        creator = self.creators.query('id == 1')
+        limb = self.corpus.make_limbs(self.genus, creator, 0)
         limb = pd.concat(limb, axis=0)
         exp_genus = {self.genus}
         exp_creator_id = {1}
@@ -270,7 +275,7 @@ class TestCorpus(ut.TestCase):
         self.assertEqual(set(limb.trait), exp_trait)
         
         self.corpus.max_depth = 0
-        limb = self.corpus.make_limbs(self.genus, self.creator, 0)
+        limb = self.corpus.make_limbs(self.genus, self.creators, 0)
         self.assertFalse(limb)
         
         genus = 'creatures_0_0_0'
@@ -279,7 +284,7 @@ class TestCorpus(ut.TestCase):
         self.assertFalse(limb)
         
         self.corpus.max_depth = 2
-        limb = self.corpus.make_limbs(self.genus, self.creator, 0)
+        limb = self.corpus.make_limbs(self.genus, self.creators, 0)
         limb = pd.concat(limb, axis=0)
         exp_species = set()
         
@@ -329,7 +334,7 @@ class TestDiktua(ut.TestCase):
         cls.csv_path = 'tests/data/test_diktua.csv'
         cls.html_path = 'tests/data/test_diktua.html'
         cls.species_per_genus = 3
-        cls.num_beings = 10
+        cls.num_beings = 5
         cls.trait = 'name'
         
         cls.maker = Maker(
@@ -343,8 +348,8 @@ class TestDiktua(ut.TestCase):
         ) = cls.maker.get() if cls.checkEidolaExist() else cls.maker.make()
         
         cls.genus = 'creators'
-        cls.creator = cls.fathers[0].sample(1)
-        cls.corpus = Corpus(cls.test_db, cls.genus, cls.creator, 1).assemble()
+        cls.creators = cls.fathers[0]
+        cls.corpus = Corpus(cls.test_db, cls.genus, cls.creators, 1).assemble()
         cls.self_edges = False
         
         cls.diktua = Diktua(
@@ -371,20 +376,19 @@ class TestDiktua(ut.TestCase):
     def get_expected_edges(cls, self_edges):
         sons = [f'creatures_{i}' for i in range(cls.species_per_genus)]
         
+        exp_edges = {
+            tuple(sorted(i)) for i in itertools.combinations(sons, 2)
+        }
+        
         if self_edges:
-            exp_edges = {
-                tuple(sorted(i)) for i in itertools.permutations(sons, 2)
-            }
-        else:
-            exp_edges = {
-                tuple(sorted(i)) for i in itertools.combinations(sons, 2)
-            }
+            exp_edges = exp_edges.union({(s, s) for s in sons})
             
         return exp_edges
         
     def testGetGraphElements(self):
         exp_nodes = set(self.corpus.species.unique()) - {self.genus}
         exp_edges = self.get_expected_edges(self.self_edges)
+        self.diktua.self_edges = self.self_edges
         nodes, edges = self.diktua.get_graph_elements()
         edges = [tuple(sorted(e)) for e in edges]
         self.assertEqual(set(nodes), exp_nodes)

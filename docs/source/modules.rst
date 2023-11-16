@@ -1,5 +1,5 @@
-indexia
-=======
+Reference
+=========
 
 .. toctree::
    :maxdepth: 4

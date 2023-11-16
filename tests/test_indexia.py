@@ -1,6 +1,5 @@
 from indexia.indexia import Indexia
 from indexia.inquiry import Tabula
-
 import os
 import pandas as pd
 import sqlite3
