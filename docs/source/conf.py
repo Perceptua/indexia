@@ -7,7 +7,7 @@ import sys
 
 package_dir = os.path.join(
     os.path.abspath(__file__), 
-    '..', '..', '..', #'indexia'
+    '..', '..', '..', 'indexia'
 )
 
 sys.path.insert(0, package_dir)
