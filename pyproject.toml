@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "indexia"
-version = "1.0.0"
+version = "1.0.1"
 description = "Collections & connections. A virtual Zettelkasten."
 readme = "README.rst"
 requires-python = ">=3.8"
@@ -24,4 +24,5 @@ classifiers = [
 
 [project.urls]
 "Homepage" = "https://github.com/Perceptua/indexia"
-"Bug Tracker" = "https://github.com/Perceptua/indexia/issues"
+"Bugs" = "https://github.com/Perceptua/indexia/issues"
+"Documentation" = "https://indexia.readthedocs.io/en/latest/"
