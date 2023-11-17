@@ -2,6 +2,15 @@ Releases
 ========
 
 
+`1.0.2 <https://github.com/Perceptua/indexia/releases/tag/v1.0.2>`_
+-------------------------------------------------------------------
+
+**Features:**
+
+* Enable retrieval of being based on values of traits (text attributes).
+* Add sections headers to docs & Custom workflows section to Usage.
+
+
 `1.0.1 <https://github.com/Perceptua/indexia/releases/tag/v1.0.1>`_
 -------------------------------------------------------------------
 
