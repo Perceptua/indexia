@@ -266,7 +266,7 @@ class Corpus:
         self.max_depth = max_depth
         self.spine = ScalaNaturae(self.db)
     
-    def get_trait(self, species, creatures):
+    def get_trait(self, species):
         '''
         Gets the trait (attribute) column of the given 
         species.
@@ -275,15 +275,6 @@ class Corpus:
         ----------
         species : str
             Name of the creature (child) table.
-        creatures : pandas.DataFrame
-            Dataframe of creature entity data.
-
-        Raises
-        ------
-        ValueError
-            If no trait column is identified, or if more 
-            than one trait column is identified, raise a 
-            ValueError.
 
         Returns
         -------
@@ -291,16 +282,9 @@ class Corpus:
             Name of the trait column.
 
         '''
-        columns = list(creatures.columns)
-        traits = [c for c in columns if c != 'id' and not c.endswith('_id')]
-        
-        if not traits or len(traits) > 1:
-            err_msg = 'Found multiple trait columns'
-            err_msg = err_msg if traits else 'Found no trait column'
-            err_msg = f'{err_msg} for {species}.'
-            raise ValueError(err_msg)
-            
-        trait = traits[0]
+        with Indexia(self.db) as ix:
+            cnxn = ix.open_cnxn(ix.db)
+            trait = ix.get_trait(cnxn, species)
         
         return trait
     
@@ -327,7 +311,7 @@ class Corpus:
 
         '''
         creator_id = None if creator.empty else creator.id.values[0]
-        trait = self.get_trait(species, creatures)
+        trait = self.get_trait(species)
         member = pd.DataFrame()
         
         for i, creature in creatures.iterrows():
