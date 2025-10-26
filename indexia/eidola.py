@@ -4,7 +4,10 @@ Make sample creators & creatures.
 '''
 from indexia.indexia import Indexia
 from datetime import datetime as dt, timedelta as td
+from typing import Any
 import random
+import sqlite3
+import pandas
 
 
 class Maker:
@@ -12,7 +15,7 @@ class Maker:
     Fashion any number of creators & creatures for testing.
     
     '''
-    def __init__(self, test_db, species_per_genus, num_beings, trait):
+    def __init__(self, test_db: str, species_per_genus: int, num_beings: int, trait: str) -> None:
         '''
         Create a Maker instance.
 
@@ -33,12 +36,12 @@ class Maker:
         None.
 
         '''
-        self.test_db = test_db
-        self.species_per_genus = species_per_genus
-        self.num_beings = num_beings
-        self.trait = trait
+        self.test_db: str = test_db
+        self.species_per_genus: int = species_per_genus
+        self.num_beings: int = num_beings
+        self.trait: str = trait
         
-    def make_creators(self, ix, cnxn, genus):
+    def make_creators(self, ix: Indexia, cnxn: sqlite3.Connection, genus: str) -> pandas.DataFrame:
         '''
         Make creator beings.
         
@@ -56,7 +59,7 @@ class Maker:
 
         Returns
         -------
-        creators : list(pandas.DataFrame)
+        creators : pandas.DataFrame
             Dataframe of creator data.
 
         '''
@@ -67,11 +70,11 @@ class Maker:
             )
             
         sql = 'SELECT * FROM creators;'
-        creators = ix.get_df(cnxn, sql)
+        creators: pandas.DataFrame = ix.get_df(cnxn, sql)
         
         return creators
         
-    def make_creatures(self, ix, cnxn, genus, species):
+    def make_creatures(self, ix: Indexia, cnxn: sqlite3.Connection, genus: str, species: str) -> pandas.DataFrame:
         '''
         Make sample creatures with a given genus & species.
         
@@ -97,19 +100,24 @@ class Maker:
     
         '''
         for i in range(self.num_beings):
-            creator = ix.get_by_id(cnxn, genus, i + 1)
+            creator: pandas.DataFrame = ix.get_by_id(cnxn, genus, i + 1)
             
             ix.add_creature(
                 cnxn, genus, creator, 
                 species, self.trait, f'{species}_{i}'
             )
         
-        sql = f'SELECT * FROM {species};'
-        creatures = ix.get_df(cnxn, sql)
+        sql: str = f'SELECT * FROM {species};'
+        creatures: pandas.DataFrame = ix.get_df(cnxn, sql)
         
         return creatures
     
-    def make_species(self, ix, cnxn, genus, species_prefix):
+    def make_species(
+            self, ix: Indexia,
+            cnxn: sqlite3.Connection,
+            genus: str,
+            species_prefix: str
+        ) -> list[pandas.DataFrame]:
         '''
         Make one or more species of a given genus.
         
@@ -133,19 +141,19 @@ class Maker:
     
         Returns
         -------
-        species : list(pandas.DataFrame)
+        species : list[pandas.DataFrame]
             List of dataframes containing creature data.
     
         '''
-        species = []
+        species: list[pandas.DataFrame] = []
         
         for i in range(self.species_per_genus):
-            species_name = f'{species_prefix}_{i}'
+            species_name: str = f'{species_prefix}_{i}'
             species += [self.make_creatures(ix, cnxn, genus, species_name)]
             
         return species
         
-    def make(self):
+    def make(self) -> tuple[list[pandas.DataFrame], list[pandas.DataFrame], list[pandas.DataFrame], list[pandas.DataFrame]]:
         '''
         Make test data.
         
@@ -156,37 +164,45 @@ class Maker:
     
         Returns
         -------
-        fathers : list(pandas.DataFrame)
+        fathers : list[pandas.DataFrame]
             List containing a single dataframe of creator 
             data.
-        sons : list(pandas.DataFrame)
+        sons : list[pandas.DataFrame]
             List containing species_per_genus dataframes 
             of creature data.
-        grandsons : list(pandas.DataFrame)
+        grandsons : list[pandas.DataFrame]
             List containing (species_per_genus)^2 dataframes 
             of creature data.
-        great_grandsons : list(pandas.DataFrame)
+        great_grandsons : list[pandas.DataFrame]
             List containing (species_per_genus)^3 dataframes 
             of creature data.
 
         '''
         with Indexia(self.test_db) as ix:
-            cnxn = ix.open_cnxn(ix.db)
+            cnxn: sqlite3.Connection = ix.open_cnxn(ix.db)
             genus = 'creators'
-            fathers = [self.make_creators(ix, cnxn, genus)]
-            species_prefix = 'creatures'
-            sons = self.make_species(ix, cnxn, genus, species_prefix)
-            grandsons = []
+
+            fathers: list[pandas.DataFrame] = [
+                self.make_creators(ix, cnxn, genus)
+            ]
+
+            species_prefix: str = 'creatures'
+
+            sons: list[pandas.DataFrame] = self.make_species(
+                ix, cnxn, genus, species_prefix
+            )
+
+            grandsons: list[pandas.DataFrame] = []
             
             for i in range(self.species_per_genus):
-                genus = f'creatures_{i}'
+                genus: str = f'creatures_{i}'
                 species_prefix = f'creatures_{i}'
                 
                 grandsons += self. make_species(
                     ix, cnxn, genus, species_prefix
                 )
                 
-            great_grandsons = []
+            great_grandsons: list[pandas.DataFrame] = []
             
             for i in range(self.species_per_genus):
                 for j in range(self.species_per_genus):
@@ -199,37 +215,36 @@ class Maker:
                                 
         return fathers, sons, grandsons, great_grandsons
     
-    def get(self):
+    def get(self) -> tuple[list[pandas.DataFrame], list[pandas.DataFrame], list[pandas.DataFrame], list[pandas.DataFrame]]:
         '''
         Get test data.
 
         Returns
         -------
-        fathers : list(pandas.DataFrame)
+        fathers : list[pandas.DataFrame]
             List containing a single dataframe of creator 
             data.
-        sons : list(pandas.DataFrame)
+        sons : list[pandas.DataFrame]
             List containing species_per_genus dataframes 
             of creature data.
-        grandsons : list(pandas.DataFrame)
+        grandsons : list[pandas.DataFrame]
             List containing (species_per_genus)^2 dataframes 
             of creature data.
-        great_grandsons : list(pandas.DataFrame)
+        great_grandsons : list[pandas.DataFrame]
             List containing (species_per_genus)^3 dataframes 
             of creature data.
 
         '''
         with Indexia(self.test_db) as ix:
-            cnxn = ix.open_cnxn(ix.db)
+            cnxn: sqlite3.Connection = ix.open_cnxn(ix.db)
             sql = 'SELECT * FROM creators;'
-            fathers = [ix.get_df(cnxn, sql)]
-            
-            sons = []
-            grandsons = []
-            great_grandsons = []
+            fathers: list[pandas.DataFrame] = [ix.get_df(cnxn, sql)]
+            sons: list[pandas.DataFrame] = []
+            grandsons: list[pandas.DataFrame]  = []
+            great_grandsons: list[pandas.DataFrame]  = []
             
             for i in range(self.species_per_genus):
-                sql = f'SELECT * FROM creatures_{i};'
+                sql: str = f'SELECT * FROM creatures_{i};'
                 sons += [ix.get_df(cnxn, sql)]
                 
                 for j in range(self.species_per_genus):
@@ -248,7 +263,7 @@ class Templates:
     Create template indexia objects.
     
     '''
-    def __init__(self, db):
+    def __init__(self, db: str) -> None:
         '''
         Creates a Templates instance.
 
@@ -262,9 +277,9 @@ class Templates:
         None.
 
         '''
-        self.db = db
+        self.db: str = db
         
-    def show_templates(self):
+    def show_templates(self) -> dict[str, dict[str, Any]]:
         '''
         Show available templates
 
@@ -274,7 +289,7 @@ class Templates:
             Dictionary of available template names & table structures.
 
         '''
-        templates = {
+        templates: dict[str, dict[str, Any]] = {
             'philosophy': {'philosophers': {'works': {'topics'}}},
             'zettelkasten': {'scribes': {'libraries': {'cards': {'keywords'}}}}
         }
@@ -284,7 +299,7 @@ class Templates:
         
         return templates
         
-    def build_template(self, template_name):
+    def build_template(self, template_name: str) -> dict[str, pandas.DataFrame]:
         '''
         Create objects for the given template.
 
@@ -301,51 +316,50 @@ class Templates:
 
         Returns
         -------
-        objects : list(tuple(string, pandas.DataFrame))
-            List of tuples containing table names & object 
-            data.
+        objects : dict[str, pandas.DataFrame]
+            Dictionary mapping table names to their DataFrame objects.
 
         '''
-        objects = {}
+        objects: dict[str, pandas.DataFrame] = {}
         
         if template_name == 'philosophy':
             with Indexia(self.db) as ix:
-                cnxn = ix.open_cnxn(ix.db)
+                cnxn: sqlite3.Connection = ix.open_cnxn(ix.db)
                 
-                plato = ix.add_creator(
+                plato: pandas.DataFrame = ix.add_creator(
                     cnxn, 'philosophers', 'name', 'Plato'
                 )
                 
-                aristotle = ix.add_creator(
+                aristotle: pandas.DataFrame = ix.add_creator(
                     cnxn, 'philosophers', 'name', 'Aristotle'
                 )
                 
-                apology = ix.add_creature(
+                apology: pandas.DataFrame = ix.add_creature(
                     cnxn, 'philosophers', plato, 'works', 
                     'title', 'Apology of Socrates'
                 )
                 
-                symposium = ix.add_creature(
+                symposium: pandas.DataFrame = ix.add_creature(
                     cnxn, 'philosophers', plato, 
                     'works', 'title', 'Symposium'
                 )
                 
-                republic = ix.add_creature(
+                republic: pandas.DataFrame = ix.add_creature(
                     cnxn, 'philosophers', plato, 
                     'works', 'title', 'Republic'
                 )
                 
-                on_the_heavens = ix.add_creature(
+                on_the_heavens: pandas.DataFrame = ix.add_creature(
                     cnxn, 'philosophers', aristotle, 
                     'works', 'title', 'On the Heavens'
                 )
                 
-                topics = ix.add_creature(
+                topics: pandas.DataFrame = ix.add_creature(
                     cnxn, 'philosophers', aristotle, 
                     'works', 'title', 'Topics'
                 )
                 
-                on_the_soul = ix.add_creature(
+                on_the_soul: pandas.DataFrame = ix.add_creature(
                     cnxn, 'philosophers', aristotle, 
                     'works', 'title', 'On the Soul'
                 )
@@ -385,10 +399,16 @@ class Templates:
                     'topics', 'name', 'civics'
                 )
                 
-                philosophers = ix.get_df(cnxn, 'SELECT * FROM philosophers;')
+                philosophers: pandas.DataFrame = ix.get_df(
+                    cnxn, 'SELECT * FROM philosophers;'
+                )
+
                 objects['philosophers'] = philosophers
                 
-                works = ix.get_df(cnxn, 'SELECT * FROM works;')
+                works: pandas.DataFrame = ix.get_df(
+                    cnxn, 'SELECT * FROM works;'
+                )
+
                 objects['works'] = works
                 
                 topics = ix.get_df(cnxn, 'SELECT * FROM topics;')
@@ -398,19 +418,21 @@ class Templates:
             with Indexia(self.db) as ix:
                 cnxn = ix.open_cnxn(ix.db)
                 
-                scribe = ix.add_creator(cnxn, 'scribes', 'name', 'Grammateus')
+                scribe: pandas.DataFrame = ix.add_creator(
+                    cnxn, 'scribes', 'name', 'Grammateus'
+                )
                 
-                first = ix.add_creature(
+                first: pandas.DataFrame = ix.add_creature(
                     cnxn, 'scribes', scribe, 'libraries', 'name', 'First'
                 )
                 
-                second = ix.add_creature(
+                second: pandas.DataFrame = ix.add_creature(
                     cnxn, 'scribes', scribe, 'libraries', 'name', 'Second'
                 )
                 
-                now = dt.now()
+                now: dt = dt.now()
                 
-                keywords = [
+                keywords: list[str] = [
                     'writing', 'inscription', 'zettelkasten',
                     'mnemotechnic', 'topic', 'category',
                     'antinomy', 'reason', 'anatomy',
@@ -418,13 +440,13 @@ class Templates:
                 ]
                 
                 for library in [first, second]:
-                    for i in range(1, 4):
-                        created = now + td(minutes=1)
-                        created = created.strftime('%Y-%m-%d-%H-%M')
+                    for _ in range(1, 4):
+                        created: dt = now + td(minutes=1)
+                        created_str: str = created.strftime('%Y-%m-%d-%H-%M')
                         
-                        card = ix.add_creature(
+                        card: pandas.DataFrame = ix.add_creature(
                             cnxn, 'libraries', library, 
-                            'cards', 'created', created
+                            'cards', 'created', created_str
                         )
                         
                         for keyword in random.sample(keywords, 3):
@@ -433,17 +455,29 @@ class Templates:
                                 'keywords', 'keyword', keyword
                             )
                 
-                scribes = ix.get_df(cnxn, 'SELECT * FROM scribes;')
+                scribes: pandas.DataFrame = ix.get_df(
+                    cnxn, 'SELECT * FROM scribes;'
+                )
+
                 objects['scribes'] = scribes
                 
-                libraries = ix.get_df(cnxn, 'SELECT * FROM libraries;')
+                libraries: pandas.DataFrame = ix.get_df(
+                    cnxn, 'SELECT * FROM libraries;'
+                )
+
                 objects['libraries'] = libraries
                 
-                cards = ix.get_df(cnxn, 'SELECT * FROM cards;')
+                cards: pandas.DataFrame = ix.get_df(
+                    cnxn, 'SELECT * FROM cards;'
+                )
+
                 objects['cards'] = cards
                 
-                keywords = ix.get_df(cnxn, 'SELECT * FROM keywords;')
-                objects['keywords'] = keywords
+                keywords_df: pandas.DataFrame = ix.get_df(
+                    cnxn, 'SELECT * FROM keywords;'
+                )
+
+                objects['keywords'] = keywords_df
                 
         else:
             self.show_templates()
