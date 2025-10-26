@@ -15,7 +15,13 @@ class Maker:
     Fashion any number of creators & creatures for testing.
     
     '''
-    def __init__(self, test_db: str, species_per_genus: int, num_beings: int, trait: str) -> None:
+    def __init__(
+        self,
+        test_db: str,
+        species_per_genus: int,
+        num_beings: int,
+        trait: str
+    ) -> None:
         '''
         Create a Maker instance.
 
@@ -41,7 +47,12 @@ class Maker:
         self.num_beings: int = num_beings
         self.trait: str = trait
         
-    def make_creators(self, ix: Indexia, cnxn: sqlite3.Connection, genus: str) -> pandas.DataFrame:
+    def make_creators(
+        self,
+        ix: Indexia,
+        cnxn: sqlite3.Connection,
+        genus: str
+    ) -> pandas.DataFrame:
         '''
         Make creator beings.
         
@@ -74,7 +85,13 @@ class Maker:
         
         return creators
         
-    def make_creatures(self, ix: Indexia, cnxn: sqlite3.Connection, genus: str, species: str) -> pandas.DataFrame:
+    def make_creatures(
+        self,
+        ix: Indexia,
+        cnxn: sqlite3.Connection,
+        genus: str,
+        species: str
+    ) -> pandas.DataFrame:
         '''
         Make sample creatures with a given genus & species.
         
@@ -113,11 +130,12 @@ class Maker:
         return creatures
     
     def make_species(
-            self, ix: Indexia,
-            cnxn: sqlite3.Connection,
-            genus: str,
-            species_prefix: str
-        ) -> list[pandas.DataFrame]:
+        self,
+        ix: Indexia,
+        cnxn: sqlite3.Connection,
+        genus: str,
+        species_prefix: str
+    ) -> list[pandas.DataFrame]:
         '''
         Make one or more species of a given genus.
         
@@ -153,7 +171,9 @@ class Maker:
             
         return species
         
-    def make(self) -> tuple[list[pandas.DataFrame], list[pandas.DataFrame], list[pandas.DataFrame], list[pandas.DataFrame]]:
+    def make(
+        self
+    ) -> tuple[list[pandas.DataFrame], list[pandas.DataFrame], list[pandas.DataFrame], list[pandas.DataFrame]]:
         '''
         Make test data.
         
@@ -215,7 +235,9 @@ class Maker:
                                 
         return fathers, sons, grandsons, great_grandsons
     
-    def get(self) -> tuple[list[pandas.DataFrame], list[pandas.DataFrame], list[pandas.DataFrame], list[pandas.DataFrame]]:
+    def get(
+        self
+    ) -> tuple[list[pandas.DataFrame], list[pandas.DataFrame], list[pandas.DataFrame], list[pandas.DataFrame]]:
         '''
         Get test data.
 
@@ -263,7 +285,10 @@ class Templates:
     Create template indexia objects.
     
     '''
-    def __init__(self, db: str) -> None:
+    def __init__(
+        self,
+        db: str
+    ) -> None:
         '''
         Creates a Templates instance.
 
@@ -279,7 +304,9 @@ class Templates:
         '''
         self.db: str = db
         
-    def show_templates(self) -> dict[str, dict[str, Any]]:
+    def show_templates(
+        self
+    ) -> dict[str, dict[str, Any]]:
         '''
         Show available templates
 
@@ -299,7 +326,10 @@ class Templates:
         
         return templates
         
-    def build_template(self, template_name: str) -> dict[str, pandas.DataFrame]:
+    def build_template(
+        self,
+        template_name: str
+    ) -> dict[str, pandas.DataFrame]:
         '''
         Create objects for the given template.
 

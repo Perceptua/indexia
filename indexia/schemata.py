@@ -20,7 +20,10 @@ class ScalaNaturae:
     Ascend & descend the hierarchy of indexia data.
     
     '''
-    def __init__(self, db: str) -> None:
+    def __init__(
+        self,
+        db: str
+    ) -> None:
         '''
         Creates a ScalaNaturae instance.
 
@@ -36,7 +39,11 @@ class ScalaNaturae:
         '''
         self.db: str = db
     
-    def upward(self, species: str, creature: pd.DataFrame) -> list[tuple[str, pd.DataFrame]]:
+    def upward(
+        self,
+        species: str,
+        creature: pd.DataFrame
+    ) -> list[tuple[str, pd.DataFrame]]:
         '''
         Climb up one rung.
 
@@ -61,7 +68,11 @@ class ScalaNaturae:
              
         return next_rung
      
-    def downward(self, genus: str, creator: pd.DataFrame) -> list[tuple[str, pd.DataFrame]]:
+    def downward(
+        self,
+        genus: str,
+        creator: pd.DataFrame
+    ) -> list[tuple[str, pd.DataFrame]]:
         '''
         Climb down one rung.
 
@@ -86,7 +97,12 @@ class ScalaNaturae:
             
         return next_rung
      
-    def climb(self, kind: str, being: pd.DataFrame, direction: str) -> list[tuple[str, pd.DataFrame]]:
+    def climb(
+        self,
+        kind: str,
+        being: pd.DataFrame,
+        direction: str
+    ) -> list[tuple[str, pd.DataFrame]]:
         '''
         Climb one rung in either direction (up or down).
 
@@ -156,7 +172,12 @@ class Dendron:
         self.db: str = db
         self.trunk: ScalaNaturae = ScalaNaturae(self.db)
         
-    def render_image(self, genus: str, creators: pd.DataFrame, root: et.Element = et.Element('root')) -> et.ElementTree:
+    def render_image(
+        self,
+        genus: str,
+        creators: pd.DataFrame,
+        root: et.Element = et.Element('root')
+    ) -> et.ElementTree:
         '''
         Render the XML tree.
 
@@ -199,7 +220,12 @@ class Dendron:
         
         return image
             
-    def write_image(self, image: et.ElementTree, file_path: str = '', open_browser: bool = True) -> str:
+    def write_image(
+        self,
+        image: et.ElementTree,
+        file_path: str = '',
+        open_browser: bool = True
+    ) -> str:
         '''
         Write the XML image of the Dendron instance to 
         an XML file, & optionally open in the browser.
@@ -242,7 +268,13 @@ class Corpus:
     Represent indexia data as a dataframe.
     
     '''
-    def __init__(self, db: str, genus: str, creators: pd.DataFrame, max_depth: int = 10) -> None:
+    def __init__(
+        self,
+        db: str,
+        genus: str,
+        creators: pd.DataFrame,
+        max_depth: int = 10
+    ) -> None:
         '''
         Creates a Corpus instance for the given creator data.
         
@@ -272,7 +304,10 @@ class Corpus:
         self.max_depth: int = max_depth
         self.spine = ScalaNaturae(self.db)
     
-    def get_trait(self, species: str) -> str:
+    def get_trait(
+        self,
+        species: str
+    ) -> str:
         '''
         Gets the trait (attribute) column of the given 
         species.
@@ -294,7 +329,13 @@ class Corpus:
         
         return trait
     
-    def make_member(self, genus: str| None, creator: pd.DataFrame, species: str, creatures: pd.DataFrame) -> pd.DataFrame:
+    def make_member(
+        self,
+        genus: str | None,
+        creator: pd.DataFrame,
+        species: str,
+        creatures: pd.DataFrame
+    ) -> pd.DataFrame:
         '''
         Creates a dataframe of indexia entity data.
 
@@ -335,7 +376,12 @@ class Corpus:
             
         return member
     
-    def make_limbs(self, genus: str, creator: pd.DataFrame, depth: int) -> list[pd.DataFrame]:
+    def make_limbs(
+        self,
+        genus: str,
+        creator: pd.DataFrame,
+        depth: int
+    ) -> list[pd.DataFrame]:
         '''
         Moves down the spine to create lists of dataframes 
         representing indexia entity data.
@@ -377,7 +423,9 @@ class Corpus:
         
         return limbs
     
-    def assemble(self) -> pd.DataFrame:
+    def assemble(
+        self
+    ) -> pd.DataFrame:
         '''
         Assemble the corpus of each of the creator entities.
 
@@ -408,7 +456,12 @@ class Corpus:
         
         return corpus
     
-    def to_csv(self, corpus: pd.DataFrame, file_path: str, **kwargs: dict[str, Any]) -> str:
+    def to_csv(
+        self,
+        corpus: pd.DataFrame,
+        file_path: str,
+        **kwargs: Any
+    ) -> str:
         '''
         Save an assembled corpus dataframe to a CSV file.
 
@@ -437,7 +490,13 @@ class Diktua:
     Represent indexia data as a network graph.
     
     '''
-    def __init__(self, corpus: pd.DataFrame, as_nodes: str, as_edges: str, self_edges: bool = False) -> None:
+    def __init__(
+        self,
+        corpus: pd.DataFrame,
+        as_nodes: str,
+        as_edges: str,
+        self_edges: bool = False
+    ) -> None:
         '''
         Creates an Indexinet instance.
 
@@ -467,7 +526,9 @@ class Diktua:
         self.self_edges: bool = self_edges
         self.make_undirected_graph()
         
-    def get_graph_elements(self) -> tuple[list[Any], list[tuple[Any, Any]]]:
+    def get_graph_elements(
+        self
+    ) -> tuple[list[Any], list[tuple[Any, Any]]]:
         '''
         Get graph nodes & edges.
 
@@ -505,7 +566,9 @@ class Diktua:
                 
         return nodes, edges
     
-    def make_undirected_graph(self) -> None:
+    def make_undirected_graph(
+        self
+    ) -> None:
         '''
         Create an undirected network graph from 
         the corpus attribute of the instance.
@@ -527,7 +590,9 @@ class Diktua:
         
         return None
     
-    def get_node_info(self) -> tuple[dict[Any, int], dict[Any, str]]:
+    def get_node_info(
+        self
+    ) -> tuple[dict[Any, int], dict[Any, str]]:
         '''
         Count node edges & assign titles.
         
@@ -557,7 +622,12 @@ class Diktua:
 
         return node_edges, node_titles
     
-    def get_node_sizes(self, node_edges: dict[Any, int], min_size: int, max_size: int) -> dict[Any, int]:
+    def get_node_sizes(
+        self,
+        node_edges: dict[Any, int],
+        min_size: int,
+        max_size: int
+    ) -> dict[Any, int]:
         '''
         Calculate node size based on number of edges.
         
@@ -591,7 +661,11 @@ class Diktua:
             
         return node_sizes
     
-    def style_nodes(self, min_size: int = 7, max_size: int = 49) -> None:
+    def style_nodes(
+        self,
+        min_size: int = 7,
+        max_size: int = 49
+    ) -> None:
         '''
         Set size & title attributes of graph nodes.
 
@@ -620,7 +694,11 @@ class Diktua:
         
         return None
 
-    def plot(self, plot_path: str | None = None, open_browser: bool = False) -> tuple[Network, str | None]:
+    def plot(
+        self,
+        plot_path: str | None = None,
+        open_browser: bool = False
+    ) -> tuple[Network, str | None]:
         """
         Create a plot of the instance's graph.
 
@@ -652,7 +730,11 @@ class Diktua:
         
         return plot, plot_path
         
-    def to_csv(self, file_path: str, **kwargs: dict[str, Any]) -> str:
+    def to_csv(
+        self,
+        file_path: str,
+        **kwargs: Any
+    ) -> str:
         """
         Save the edges of the instance's graph to a CSV file 
         with columns 'source' & 'target'.
@@ -661,7 +743,7 @@ class Diktua:
         ----------
         file_path : str
             Path of the CSV file to be created.
-        **kwargs : dict[str, any]
+        **kwargs : Any
             Any keyword arguments accepted by pandas.DataFrame.to_csv.
 
         Returns
