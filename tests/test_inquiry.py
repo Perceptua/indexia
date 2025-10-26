@@ -4,51 +4,51 @@ import unittest as ut
 
 class TestInquiry(ut.TestCase):
     @classmethod
-    def setUpClass(cls):
-        cls.tablename = 'users'
-        cls.values = [('user1'), ('user2'), ('user3')]
+    def setUpClass(cls) -> None:
+        cls.tablename: str = 'users'
+        cls.values: list[str] = [('user1'), ('user2'), ('user3')]
         
-        cls.columns = {
+        cls.columns: dict[str, str] = {
             'uid': 'INT PRIMARY KEY',
             'username': 'VARCHAR(28)'
         }
         
-    def testCreate(self):
-        statement = Inquiry.create(self.tablename, self.columns)
+    def testCreate(self) -> None:
+        statement: str = Inquiry.create(self.tablename, self.columns)
         
-        expected = ' '.join([
+        expected: str = ' '.join([
             'CREATE TABLE IF NOT EXISTS users',
             '(uid INT PRIMARY KEY,username VARCHAR(28))'
         ])
         
         self.assertEqual(statement, expected)
         
-    def testInsert(self):        
-        statement = Inquiry.insert(
+    def testInsert(self) -> None:        
+        statement: str = Inquiry.insert(
             self.tablename, 
             [(i, f'user{i}') for i in range(1, 4)]
         )
         
-        expected = ' '.join([
+        expected: str = ' '.join([
             'INSERT INTO users VALUES',
             "('1','user1'),('2','user2'),('3','user3')"
         ])
         
         self.assertEqual(statement, expected)
         
-    def testSelect(self):
-        statement = Inquiry.select(
+    def testSelect(self) -> None:
+        statement: str = Inquiry.select(
             self.tablename, 
             ['uid'], 
             'WHERE uid > 1'
         )
         
-        expected = 'SELECT uid FROM users WHERE uid > 1'
+        expected: str = 'SELECT uid FROM users WHERE uid > 1'
         self.assertEqual(statement, expected)
     
-    def testDelete(self):
-        statement = Inquiry.delete(self.tablename)
-        expected = 'DELETE FROM users '
+    def testDelete(self) -> None:
+        statement: str = Inquiry.delete(self.tablename)
+        expected: str = 'DELETE FROM users '
         self.assertEqual(statement, expected)
         
         statement = Inquiry.delete(
@@ -59,52 +59,57 @@ class TestInquiry(ut.TestCase):
         expected = "DELETE FROM users WHERE username = 'user1'"
         self.assertEqual(statement, expected)
         
-    def testUpdate(self):
-        statement = Inquiry.update(
+    def testUpdate(self) -> None:
+        statement: str = Inquiry.update(
             self.tablename, 
             ['username'], 
             ['user4'],
             conditions="WHERE username = 'user1'"
         )
         
-        expected = ' '.join([
+        expected: str = ' '.join([
             "UPDATE users SET username = 'user4'",
             "WHERE username = 'user1'"
         ])
         
         self.assertEqual(statement, expected)
     
-    def testWhere(self):
-        statement = Inquiry.where(
+    def testWhere(self) -> None:
+        statement: str = Inquiry.where(
             ['username', 'username'], 
             ['user1', 'user2'],
             conjunction='OR'
         )
         
-        expected = "WHERE username = 'user1' OR username = 'user2'"
+        expected: str = "WHERE username = 'user1' OR username = 'user2'"
         self.assertEqual(statement, expected)
 
 
 class TestTabula(ut.TestCase):
     @classmethod
-    def setUpClass(cls):
-        cls.genus = 'scribes'
-        cls.species = 'libraries'
-        cls.genus_trait = 'pseudonym'
-        cls.species_trait = 'libronym'
+    def setUpClass(cls) -> None:
+        cls.genus: str = 'scribes'
+        cls.species: str = 'libraries'
+        cls.genus_trait: str = 'pseudonym'
+        cls.species_trait: str = 'libronym'
         
-    def testGetCreatorTable(self):
-        genus, cols = Tabula.get_creator_table(
+    def testGetCreatorTable(self) -> None:
+        creator_info: tuple[str, dict[str, str]] = Tabula.get_creator_table(
             self.genus, self.genus_trait
         )
+        genus: str = creator_info[0]
+        cols: dict[str, str] = creator_info[1] 
         
         self.assertEqual(self.genus, genus)
         self.assertEqual({'id', self.genus_trait}, set(cols.keys()))
         
-    def testGetCreatureTable(self):
-        species, cols = Tabula.get_creature_table(
+    def testGetCreatureTable(self) -> None:
+        creature_info: tuple[str, dict[str, str]] = Tabula.get_creature_table(
             self.genus, self.species, self.species_trait
         )
+
+        species: str = creature_info[0]
+        cols: dict[str, str] = creature_info[1]
         
         self.assertEqual(self.species, species)
         
@@ -115,13 +120,13 @@ class TestTabula(ut.TestCase):
             f'FOREIGN KEY ({self.genus}_id)'
         }, set(cols.keys()))
     
-    def testReferences(self):
-        references = Tabula.references(
+    def testReferences(self) -> None:
+        references: str = Tabula.references(
             self.genus, 
             self.genus_trait
         )
         
-        expected = ' '.join([
+        expected: str = ' '.join([
             f'REFERENCES {self.genus}({self.genus_trait})',
             'ON DELETE CASCADE ON UPDATE CASCADE'
         ])
