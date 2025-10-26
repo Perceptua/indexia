@@ -3,9 +3,10 @@ Defines core operations on indexia objects.
 
 '''
 from indexia.inquiry import Inquiry, Tabula
+from typing import Any
 import os
 import sqlite3
-import pandas as pd
+import pandas
 
 
 class Indexia:
@@ -14,7 +15,9 @@ class Indexia:
     indexia objects.
     
     '''
-    def __init__(self, db=None):
+    def __init__(
+        self, db: str | None = None
+    ) -> None:
         '''
         Create an indexia instance & build a path to 
         a default database file if one is not supplied.
@@ -29,14 +32,16 @@ class Indexia:
         None.
 
         '''
-        self.cnxns = {}
+        self.cnxns: dict[str, list[sqlite3.Connection]] = {}
         
-        self.db = db if db else os.path.join(
+        self.db: str = db if db else os.path.join(
             os.path.abspath(__file__),
             '..', 'data', 'indexia.db'
         )
     
-    def __enter__(self):
+    def __enter__(
+        self
+    ) -> 'Indexia':
         '''
         Enable with _ as _ syntax.
 
@@ -44,14 +49,34 @@ class Indexia:
         return self
 
 
-    def __exit__(self, exc_type, exc_value, traceback):
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_value: BaseException | None,
+        traceback: Any
+    ) -> None:
         '''
         Close all database connections on exit.
+
+        Parameters
+        ----------
+        exc_type : type[BaseException] | None
+            The type of the exception that was raised
+        exc_value : BaseException | None
+            The instance of the exception that was raised
+        traceback : Any
+            The traceback if an exception was raised
+
+        Returns
+        -------
+        None
 
         '''
         self.close_all_cnxns()
             
-    def open_cnxn(self, db):
+    def open_cnxn(
+        self, db: str
+    ) -> sqlite3.Connection:
         '''
         Open a connection to a database.
 
@@ -66,7 +91,7 @@ class Indexia:
             Connection to the database.
 
         '''
-        cnxn = sqlite3.connect(db)
+        cnxn: sqlite3.Connection = sqlite3.connect(db)
         cnxn.execute('PRAGMA foreign_keys = 1')
         
         if db in self.cnxns.keys():
@@ -76,7 +101,9 @@ class Indexia:
         
         return cnxn
     
-    def close_cnxn(self, db):
+    def close_cnxn(
+        self, db: str
+    ) -> None:
         '''
         Close connections to a database.
 
@@ -95,7 +122,9 @@ class Indexia:
         
         self.cnxns[db] = []
     
-    def close_all_cnxns(self):
+    def close_all_cnxns(
+        self
+    ) -> None:
         '''
         Close all database connections.
 
@@ -107,7 +136,13 @@ class Indexia:
         for db in self.cnxns:
             self.close_cnxn(db)
             
-    def get_df(self, cnxn, sql, expected_columns=None, raise_errors=False):
+    def get_df(
+        self,
+        cnxn: sqlite3.Connection,
+        sql: str,
+        expected_columns: list[str]=[],
+        raise_errors: bool=False
+    ) -> pandas.DataFrame:
         '''
         Get result of SQL query as a pandas dataframe.
         In the event of an exception, return an empty
@@ -119,10 +154,10 @@ class Indexia:
             Connection to the database.
         sql : str
             SQL to be executed by pandas.read_sql.
-        expected_columns : list(str), optional
+        expected_columns : list[str], optional
             List of expected columns. If raise_errors is True 
             & the dataframe columns do not match expected_columns, 
-            a ValueError is raised. The default is None.
+            a ValueError is raised. The default is [].
         raise_errors : bool, optional
             Whether to raise exceptions encountered during 
             execution. The default is False.
@@ -140,13 +175,13 @@ class Indexia:
             SQL query.
 
         '''
-        error = None
+        error: ValueError | Exception | None = None
         
         try:
-            df = pd.read_sql(sql, cnxn)
+            df: pandas.DataFrame = pandas.read_sql(sql, cnxn) # type: ignore
             
             if expected_columns and set(df.columns) != set(expected_columns):
-                err_msg = ' '.join([
+                err_msg: str = ' '.join([
                     f'expected columns {expected_columns}.',
                     f'found {list(df.columns)}'
                 ])
@@ -155,14 +190,22 @@ class Indexia:
         
         except Exception as err:
             error = err
-            df = pd.DataFrame(columns=expected_columns)
+            df = pandas.DataFrame(columns=expected_columns)
             
         if error and raise_errors:
             raise error
             
         return df
             
-    def get_or_create(self, cnxn, tablename, dtype, cols, vals, retry=True):
+    def get_or_create(
+        self,
+        cnxn: sqlite3.Connection,
+        tablename: str,
+        dtype: dict[str, str], 
+        cols: list[str],
+        vals: list[Any],
+        retry: bool = True
+    ) -> pandas.DataFrame:
         '''
         Get entities from an existing table, or create 
         the table & (optionally) insert them.
@@ -174,11 +217,11 @@ class Indexia:
         tablename : str
             Name of the database table. If the table does 
             not exist, it will be created.
-        dtype : dict(str, str)
+        dtype : dict[str, str]
             Dict of table columns & column data types.
-        cols : list(str)
+        cols : list[str]
             Columns to be used in SELECT statement.
-        vals : list(str)
+        vals : list[str]
             Values to be used in SELECT statement.
         retry : bool, optional
             If true & SELECT returns an empty result, 
@@ -198,16 +241,16 @@ class Indexia:
             value criteria.
 
         '''
-        create = Inquiry.create(tablename, dtype)
+        create: str = Inquiry.create(tablename, dtype)
         cnxn.execute(create)
         cnxn.commit()
         
-        where = Inquiry.where(cols, vals)
-        select = Inquiry.select(tablename, ['*'], where)
-        result = self.get_df(cnxn, select)
+        where: str = Inquiry.where(cols, vals)
+        select: str = Inquiry.select(tablename, ['*'], where)
+        result: pandas.DataFrame = self.get_df(cnxn, select)
         
         if result.empty and retry:
-            insert = Inquiry.insert(tablename, [tuple(vals)], columns=cols)
+            insert: str = Inquiry.insert(tablename, [tuple(vals)], columns=cols)
             cnxn.execute(insert)
             cnxn.commit()
             
@@ -220,7 +263,12 @@ class Indexia:
         
         return result
                 
-    def delete(self, cnxn, species, entity_id):
+    def delete(
+        self,
+        cnxn: sqlite3.Connection,
+        species: str,
+        entity_id: int
+    ) -> int:
         '''
         Delete an entity from a table by ID.
 
@@ -239,20 +287,24 @@ class Indexia:
             Count of rows affected by DELETE statement.
 
         '''
-        where = Inquiry.where(['id'], [entity_id])
-        delete = Inquiry.delete(species, where)
-        cursor = cnxn.cursor()
+        where: str = Inquiry.where(['id'], [entity_id])
+        delete: str = Inquiry.delete(species, where)
+        cursor: sqlite3.Cursor = cnxn.cursor()
         cursor.execute(delete)
         cnxn.commit()
-        rows_deleted = cursor.rowcount
+        rows_deleted: int = cursor.rowcount
         
         return rows_deleted
     
     def update(
-            self, cnxn, tablename, 
-            set_cols, set_vals, 
-            where_cols, where_vals
-        ):
+        self,
+        cnxn: sqlite3.Connection,
+        tablename: str,
+        set_cols: list[str],
+        set_vals: list[Any],
+        where_cols: list[str],
+        where_vals: list[Any]
+    ) -> int:
         '''
         Update values in a database table. Executes a SQL statement 
         of the form
@@ -274,13 +326,13 @@ class Indexia:
             A database connection.
         tablename : str
             Name of the table to update.
-        set_cols : list(str)
+        set_cols : list[str]
             List of columns to update.
-        set_vals : list(any)
+        set_vals : list[Any]
             Updated values for columns.
-        where_cols : list(str)
+        where_cols : list[str]
             List of columns for WHERE condition.
-        where_vals : list(any)
+        where_vals : list[Any]
             List of values for WHERE condition.
 
         Returns
@@ -289,12 +341,12 @@ class Indexia:
             Number of rows affected by update statement.
 
         '''
-        where = Inquiry.where(where_cols, where_vals)
-        update = Inquiry.update(tablename, set_cols, set_vals, where)
-        cursor = cnxn.cursor()
+        where: str = Inquiry.where(where_cols, where_vals)
+        update: str = Inquiry.update(tablename, set_cols, set_vals, where)
+        cursor: sqlite3.Cursor = cnxn.cursor()
         cursor.execute(update)
         cnxn.commit()
-        rows_updated = cursor.rowcount
+        rows_updated: int = cursor.rowcount
         
         return rows_updated
     
@@ -303,7 +355,7 @@ class Indexia:
     # adders #
     ##########
     
-    def add_creator(self, cnxn, genus, trait, expr):
+    def add_creator(self, cnxn: sqlite3.Connection, genus: str, trait: str, expr: str) -> pandas.DataFrame:
         '''
         Get or create a creator entity.
 
@@ -325,12 +377,24 @@ class Indexia:
             A single-row dataframe of creator entity data.
 
         '''
-        _, dtype = Tabula.get_creator_table(genus, trait)
-        creator = self.get_or_create(cnxn, genus, dtype, [trait], [expr])
+        creator_table: tuple[str, dict[Any, str]] = Tabula.get_creator_table(
+            genus, trait
+        )
+
+        dtype: dict[str, Any | str] = creator_table[1]
+        creator: pandas.DataFrame = self.get_or_create(cnxn, genus, dtype, [trait], [expr])
         
         return creator
     
-    def add_creature(self, cnxn, genus, creator, species, trait, expr):
+    def add_creature(
+        self,
+        cnxn: sqlite3.Connection,
+        genus: str,
+        creator: pandas.DataFrame, 
+        species: str,
+        trait: str,
+        expr: str
+    ) -> pandas.DataFrame:
         '''
         Get or create a creature of a given creator.
 
@@ -356,10 +420,15 @@ class Indexia:
             A single-row dataframe of creature entity data.
 
         '''
-        creator_id = creator.id.values[0]
-        _, dtype = Tabula.get_creature_table(genus, species, trait)
-        
-        creature = self.get_or_create(
+        creator_id: int = list(creator.id)[0]
+
+        creature_table: tuple[str, dict[str, str]] = Tabula.get_creature_table(
+            genus, species, trait
+        )
+
+        dtype: dict[str, Any | str] = creature_table[1]
+
+        creature: pandas.DataFrame = self.get_or_create(
             cnxn, species, dtype, [trait, f'{genus}_id'], [expr, creator_id]
         )
         
@@ -370,7 +439,10 @@ class Indexia:
     # getters #
     ###########
     
-    def get_all_tables(self, cnxn):
+    def get_all_tables(
+        self,
+        cnxn: sqlite3.Connection
+    ) -> list[str]:
         '''
         Get all tables in the instance database.
 
@@ -381,18 +453,22 @@ class Indexia:
 
         Returns
         -------
-        tables : pandas.DataFrame
-            Dataframe describing all database tables.
+        tables : list[str]
+            List of table names in the database.
 
         '''
-        where = Inquiry.where(['type'], ['table'])
+        where: str = Inquiry.where(['type'], ['table'])
         where = f"{where} AND name NOT LIKE 'sqlite_%'"
-        sql = Inquiry.select('sqlite_schema', ['name'], where)
-        tables = list(self.get_df(cnxn, sql).name)
+        sql: str = Inquiry.select('sqlite_schema', ['name'], where)
+        tables: list[Any] = list(self.get_df(cnxn, sql).name)
         
         return tables
     
-    def get_table_columns(self, cnxn, tablename):
+    def get_table_columns(
+        self,
+        cnxn: sqlite3.Connection,
+        tablename: str
+    ) -> pandas.DataFrame:
         '''
         Get columns of a database table.
 
@@ -409,9 +485,9 @@ class Indexia:
             Dataframe describing table columns.
 
         '''
-        pragma = f'PRAGMA TABLE_INFO({tablename});'
+        pragma: str = f'PRAGMA TABLE_INFO({tablename});'
         
-        columns = self.get_df(cnxn, pragma)[
+        columns: pandas.DataFrame = self.get_df(cnxn, pragma)[
             ['name', 'type', 'notnull', 'pk']
         ].rename(columns={
             'name': 'column_name',
@@ -422,7 +498,10 @@ class Indexia:
         
         return columns
     
-    def get_trait(self, cnxn, kind):
+    def get_trait(self,
+        cnxn: sqlite3.Connection,
+        kind: str
+    ) -> str:
         '''
         Gets the trait (attribute) column of the given 
         kind.
@@ -447,20 +526,30 @@ class Indexia:
             Name of the trait column.
 
         '''
-        columns = self.get_table_columns(cnxn, kind).column_name
-        traits = [c for c in columns if c != 'id' and not c.endswith('_id')]
+        columns: pandas.Series[str] = self.get_table_columns(
+            cnxn, kind
+        ).column_name
+
+        traits: list[str] = [
+            c for c in columns if c != 'id' and not c.endswith('_id')
+        ]
         
         if not traits or len(traits) > 1:
-            err_msg = 'Found multiple trait columns'
+            err_msg: str = 'Found multiple trait columns'
             err_msg = err_msg if traits else 'Found no trait column'
             err_msg = f'{err_msg} for {kind}.'
             raise ValueError(err_msg)
             
-        trait = traits[0]
+        trait: str = traits[0]
         
         return trait
     
-    def get_by_trait(self, cnxn, kind, expr):
+    def get_by_trait(
+        self,
+        cnxn: sqlite3.Connection,
+        kind: str,
+        expr: str
+    ) -> pandas.DataFrame:
         '''
         Get being(s) by the text attribute value.
         
@@ -483,14 +572,19 @@ class Indexia:
             Dataframe of one or more beings.
 
         '''
-        trait = self.get_trait(cnxn, kind)
-        where = Inquiry.where([trait], [expr])
-        select = Inquiry.select(kind, ['*'], where)
-        being = self.get_df(cnxn, select)
+        trait: str = self.get_trait(cnxn, kind)
+        where: str = Inquiry.where([trait], [expr])
+        select: str = Inquiry.select(kind, ['*'], where)
+        being: pandas.DataFrame = self.get_df(cnxn, select)
         
         return being
     
-    def get_by_id(self, cnxn, kind, being_id):
+    def get_by_id(
+        self,
+        cnxn: sqlite3.Connection,
+        kind: str,
+        being_id: int
+    ) -> pandas.DataFrame:
         '''
         Get an entity by its id.
 
@@ -509,13 +603,17 @@ class Indexia:
             Dataframe of being data.
 
         '''
-        where = Inquiry.where(['id'], [being_id])
-        select = Inquiry.select(kind, ['*'], where)
-        being = self.get_df(cnxn, select)
+        where: str = Inquiry.where(['id'], [being_id])
+        select: str = Inquiry.select(kind, ['*'], where)
+        being: pandas.DataFrame = self.get_df(cnxn, select)
         
         return being
     
-    def get_creator_genus(self, cnxn, species):
+    def get_creator_genus(
+        self,
+        cnxn: sqlite3.Connection,
+        species: str
+    ) -> str | None:
         '''
         Get table name of creator (parent) table.
 
@@ -535,16 +633,16 @@ class Indexia:
 
         Returns
         -------
-        genus : str
+        genus : str | None
             Name of the creator (parent) table.
 
         '''
-        pragma = f'PRAGMA FOREIGN_KEY_LIST({species});'
-        foreign_keys = self.get_df(cnxn, pragma)
-        genus = None
+        pragma: str = f'PRAGMA FOREIGN_KEY_LIST({species});'
+        foreign_keys: pandas.DataFrame = self.get_df(cnxn, pragma)
+        genus: str | None = None
         
         if foreign_keys.shape[0] > 1:
-            msg = ' '.join([
+            msg: str = ' '.join([
                 'Data integrity error:',
                 f'{species} shows more than one creator',
                 f'({str(list(foreign_keys.table))}).'
@@ -553,11 +651,16 @@ class Indexia:
             raise ValueError(msg)
             
         elif not foreign_keys.empty:
-            genus = foreign_keys.table.values[0]
+            table_names: list[Any] = foreign_keys.table.tolist()
+            genus = str(table_names[0])
             
         return genus
     
-    def get_creature_species(self, cnxn, genus):
+    def get_creature_species(
+        self,
+        cnxn: sqlite3.Connection,
+        genus: str
+    ) -> list[str]:
         '''
         Get types of all creatures with a given creator genus.
 
@@ -570,19 +673,24 @@ class Indexia:
 
         Returns
         -------
-        species : list(str)
+        species : list[str]
             List of creature (child) table names.
 
         '''
-        tables = self.get_all_tables(cnxn)
+        tables: list[str] = self.get_all_tables(cnxn)
         
-        species = [
+        species: list[str] = [
             t for t in tables if self.get_creator_genus(cnxn, t) == genus
         ]
         
         return species
                 
-    def get_creator(self, cnxn, species, creature):
+    def get_creator(
+        self,
+        cnxn: sqlite3.Connection,
+        species: str,
+        creature: pandas.DataFrame
+    ) -> list[tuple[str, pandas.DataFrame]]:
         '''
         Get the creator of a given creature.
 
@@ -597,24 +705,26 @@ class Indexia:
 
         Returns
         -------
-        genus : str
-            Name of the creator (parent) table.
-        creator : pandas.DataFrame
-            A single-row dataframe of creator entity data.
+        creator : list[tuple[str, pandas.DataFrame]]
+            List containing a single tuple of (creator table name, creator data).
 
         '''
-        genus = self.get_creator_genus(cnxn, species)
-        creator = []
+        genus: str | None = self.get_creator_genus(cnxn, species)
+        creator: list[tuple[str, pandas.DataFrame]] = []
         
         if genus:
-            creator_id = creature[f'{genus}_id'].values[0]
-            where = Inquiry.where(['id'], [creator_id])
-            select = Inquiry.select(genus, ['*'], where)
+            creator_id: int = creature[f'{genus}_id'].values[0]
+            where: str = Inquiry.where(['id'], [creator_id])
+            select: str = Inquiry.select(genus, ['*'], where)
             creator = [(genus, self.get_df(cnxn, select))]
         
         return creator
     
-    def get_creatures(self, cnxn, genus, creator):
+    def get_creatures(
+        self, cnxn: sqlite3.Connection,
+        genus: str,
+        creator: pandas.DataFrame
+    ) -> list[tuple[str, pandas.DataFrame]]:
         '''
         Get all creatures of a given creator.
 
@@ -629,23 +739,21 @@ class Indexia:
 
         Returns
         -------
-        creatures : list(tuple(str, pandas.DataFrame))
+        creatures : list[tuple[str, pandas.DataFrame]]
             List of two-tuples whose first entry is the 
             name of the creature (child) table, & whose 
             second entry is a dataframe of creature data.
 
         '''
-        creator_id = creator.id.values[0]
-        species = self.get_creature_species(cnxn, genus)
-        creatures = []
+        creator_id: int = creator.id.values[0]
+        species: list[str] = self.get_creature_species(cnxn, genus)
+        creatures: list[Any] = []
         
         for s in species:
-            where = Inquiry.where([f'{genus}_id'], [creator_id])
-            select = Inquiry.select(s, ['*'], where)
+            where: str = Inquiry.where([f'{genus}_id'], [creator_id])
+            select: str = Inquiry.select(s, ['*'], where)
             
-            members = self.get_df(cnxn, select).apply(
-                pd.to_numeric, errors='ignore'
-            )
+            members: pandas.DataFrame = self.get_df(cnxn, select)
             
             creatures += [(s, members)]
             
