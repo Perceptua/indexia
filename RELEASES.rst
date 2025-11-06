@@ -2,6 +2,15 @@ Releases
 ========
 
 
+`1.0.3 <https://github.com/Perceptua/indexia/releases/tag/v1.0.3>`_
+-------------------------------------------------------------------
+
+**Features:**
+
+* Add type hints to all modules & tests.
+* Update docstrings to reflect type hints.
+
+
 `1.0.2 <https://github.com/Perceptua/indexia/releases/tag/v1.0.2>`_
 -------------------------------------------------------------------
 

@@ -2,12 +2,18 @@
 Generate SQL for indexia database oprerations.
 
 '''
+from typing import Any
+
 class Inquiry:
     '''
     Generate SQL strings from dynamic inputs. 
     
     '''
-    def create(tablename, columns):
+    @staticmethod
+    def create(
+        tablename: str,
+        columns: dict[str, str]
+    ) -> str:
         '''
         Get a SQL CREATE TABLE statement.
 
@@ -15,7 +21,7 @@ class Inquiry:
         ----------
         tablename : str
             Name of the table to create.
-        columns : dict(str)
+        columns : dict[str, str]
             Dict of columns to add to table. Keys are 
             column names, values are data types.
 
@@ -25,14 +31,22 @@ class Inquiry:
             A formatted SQL CREATE TABLE statement.
 
         '''
-        columns = [f'{col} {dtype}' for col, dtype in columns.items()]
-        columns = ','.join(columns)
-        create = f'CREATE TABLE IF NOT EXISTS {tablename}'
-        create = f'{create} ({columns})'
+        column_list: list[str] = [
+            f'{col} {dtype}' for col, dtype in columns.items()
+        ]
+        
+        column_str: str = ','.join(column_list)
+        create: str = f'CREATE TABLE IF NOT EXISTS {tablename}'
+        create = f'{create} ({column_str})'
         
         return create
     
-    def insert(tablename, values, columns=None):
+    @staticmethod
+    def insert(
+        tablename: str,
+        values: list[Any] | list[tuple[Any, ...]],
+        columns: list[str] | None = None
+    ) -> str:
         '''
         GET a SQL INSERT statement.
 
@@ -40,10 +54,11 @@ class Inquiry:
         ----------
         tablename : str
             Name of table into which values will be inserted.
-        values : list(str) or list(tuple(str))
-            A list of strings or tuples containing strings. 
-            Should be equal-length values representing the 
-            values to insert.
+        values : list[Any] | list[tuple[Any, ...]]
+            A list of values or tuples containing values. 
+            Entries represent values to insert, & should be of equal length.
+        columns : list[str] | None, optional
+            List of column names. The default is None.
 
         Returns
         -------
@@ -51,18 +66,23 @@ class Inquiry:
             A formatted SQL INSERT statement.
 
         '''
-        values = ','.join(
-            '(' + ','.join(f"'{v[i]}'" for i,_ in enumerate(v)) + ')' 
+        value_str: str = ','.join(
+            '(' + ','.join(f"'{j}'" for _, j in enumerate(v)) + ')' 
             for v in values
         )
         
-        columns = f" ({','.join(columns)})" if columns else ''
-        insert = f'INSERT INTO {tablename}{columns}'
-        insert = f'{insert} VALUES {values}'
+        column_str: str = f" ({','.join(columns)})" if columns else ''
+        insert: str = f'INSERT INTO {tablename}{column_str}'
+        insert = f'{insert} VALUES {value_str}'
         
         return insert
     
-    def select(tablename, columns, conditions=''):
+    @staticmethod
+    def select(
+        tablename: str,
+        columns: list[str],
+        conditions: str = ''
+    ) -> str:
         '''
         GET a SQL SELECT statement.
 
@@ -70,7 +90,7 @@ class Inquiry:
         ----------
         tablename : str
             Name of the table from which to select values.
-        columns : list(str)
+        columns : list[str]
             list of column names to select.
         conditions : str, optional
             A SQL-formatted string of conditions. The default is ''.
@@ -81,12 +101,16 @@ class Inquiry:
             A formatted SQL SELECT statement.
 
         '''
-        columns = ','.join(columns)
-        select = f'SELECT {columns} FROM {tablename} {conditions}'
+        column_str: str = ','.join(columns)
+        select: str = f'SELECT {column_str} FROM {tablename} {conditions}'
         
         return select
     
-    def delete(tablename, conditions=''):
+    @staticmethod
+    def delete(
+        tablename: str,
+        conditions: str = ''
+    ) -> str:
         '''
         Get a SQL DELETE FROM statement.
 
@@ -103,11 +127,17 @@ class Inquiry:
             A formatted SQL DELETE FROM statement.
 
         '''
-        delete = f'DELETE FROM {tablename} {conditions}'
+        delete: str = f'DELETE FROM {tablename} {conditions}'
         
         return delete
     
-    def update(tablename, set_cols, set_values, conditions=''):
+    @staticmethod
+    def update(
+        tablename: str,
+        set_cols: list[str],
+        set_values: list[Any],
+        conditions: str = ''
+    ) -> str:
         '''
         Get a SQL UPDATE statement.
 
@@ -115,9 +145,9 @@ class Inquiry:
         ----------
         tablename : str
             Name of the table in which to update rows.
-        set_cols : list(str)
+        set_cols : list[str]
             List of column names to update.
-        set_values : list(any)
+        set_values : list[Any]
             List of values with which to update columns. Paired with 
             set_cols such that set_cols[i] = set_values[i].
         conditions : str, optional
@@ -125,28 +155,33 @@ class Inquiry:
 
         Returns
         -------
-        update : TYPE
-            DESCRIPTION.
+        update : str
+            A formatted SQL UPDATE statement.
 
         '''
-        set_text = ''
+        set_text: str = ''
         
         for i, _ in enumerate(set_cols):
             set_text += f"{set_cols[i]} = '{set_values[i]}'"
             
-        update = f'UPDATE {tablename} SET {set_text} {conditions}'
+        update: str = f'UPDATE {tablename} SET {set_text} {conditions}'
         
         return update
     
-    def where(cols, vals, conjunction='AND'):
+    @staticmethod
+    def where(
+        cols: list[str],
+        vals: list[Any],
+        conjunction: str = 'AND'
+    ) -> str:
         '''
         Construct WHERE condition from columns & values
 
         Parameters
         ----------
-        cols : list(str)
+        cols : list[str]
             List of column names.
-        vals : list(any)
+        vals : list[Any]
             List of values.
         conjunction : str, optional
             SQL keyword to use as conjunction between 
@@ -158,10 +193,12 @@ class Inquiry:
             A SQL-formatted WHERE condition.
 
         '''
-        where = f"WHERE {cols[0]} = '{vals[0]}' "
+        where: str = f"WHERE {cols[0]} = '{vals[0]}' "
         
         where += ' '.join([
-            f"{conjunction} {cols[i]} = '{vals[i]}'" for i in range(1, len(cols))
+            f"{conjunction} {cols[i]} = '{vals[i]}'" for i in range(
+                1, len(cols)
+            )
         ])
         
         return where
@@ -172,7 +209,11 @@ class Tabula:
     Defines columns & data types of indexia tables.
     
     '''
-    def get_creator_table(genus, trait):
+    @staticmethod
+    def get_creator_table(
+        genus: str,
+        trait: str
+    ) -> tuple[str, dict[str, str]]:
         '''
         Get name & columns of a creator (parent) table.
 
@@ -185,19 +226,24 @@ class Tabula:
 
         Returns
         -------
-        creator_table : tuple(str, dict)
+        creator_table : tuple[str, dict[str, str]]
             A tuple whose first entry is the name of the creator table, 
             & whose second is a dict of table columns & data types.
 
         '''
-        creator_table = (genus, {
+        creator_table: tuple[str, dict[str, str]] = (genus, {
             'id': 'INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL',
             trait: 'TEXT UNIQUE NOT NULL'
         })
         
         return creator_table
     
-    def get_creature_table(creator, species, trait):
+    @staticmethod
+    def get_creature_table(
+        creator: str,
+        species: str,
+        trait: str
+    ) -> tuple[str, dict[str, str]]:
         '''
         Get name & columns of a creature (child) table.
 
@@ -205,19 +251,19 @@ class Tabula:
         ----------
         creator : str
             Name of the creator (parent) table.
-        name : str
+        species : str
             Name of the creature table.
-        attribute : str
+        trait : str
             Name of the creature's text attribute.
 
         Returns
         -------
-        creature_table : tuple(str, dict)
+        creature_table : tuple[str, dict[str, str]]
             A tuple whose first entry is the name of the creature table,
             & whose second is a dict of table columns & data types.
 
         '''
-        creature_table = (species, {
+        creature_table: tuple[str, dict[str, str]] = (species, {
             'id': 'INTEGER PRIMARY KEY AUTOINCREMENT',
             trait: 'TEXT NOT NULL',
             f'{creator}_id': 'INTEGER NOT NULL',
@@ -226,9 +272,13 @@ class Tabula:
         
         return creature_table
     
+    @staticmethod
     def references(
-            tablename, on_column, on_delete='CASCADE', on_update='CASCADE'
-        ):
+        tablename: str, 
+        on_column: str, 
+        on_delete: str = 'CASCADE', 
+        on_update: str = 'CASCADE'
+    ) -> str:
         '''
         Generate SQL-formatted REFERENCES clause.
 
@@ -251,7 +301,7 @@ class Tabula:
             A SQL-formatted REFERENCES clause.
 
         '''
-        references = f'REFERENCES {tablename}({on_column})'
+        references: str = f'REFERENCES {tablename}({on_column})'
         references = f'{references} ON DELETE {on_delete}'
         references = f'{references} ON UPDATE {on_update}'
         
