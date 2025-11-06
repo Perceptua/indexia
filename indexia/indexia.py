@@ -355,7 +355,13 @@ class Indexia:
     # adders #
     ##########
     
-    def add_creator(self, cnxn: sqlite3.Connection, genus: str, trait: str, expr: str) -> pandas.DataFrame:
+    def add_creator(
+        self,
+        cnxn: sqlite3.Connection,
+        genus: str,
+        trait: str,
+        expr: str
+    ) -> pandas.DataFrame:
         '''
         Get or create a creator entity.
 

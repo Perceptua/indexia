@@ -196,7 +196,9 @@ class Inquiry:
         where: str = f"WHERE {cols[0]} = '{vals[0]}' "
         
         where += ' '.join([
-            f"{conjunction} {cols[i]} = '{vals[i]}'" for i in range(1, len(cols))
+            f"{conjunction} {cols[i]} = '{vals[i]}'" for i in range(
+                1, len(cols)
+            )
         ])
         
         return where
