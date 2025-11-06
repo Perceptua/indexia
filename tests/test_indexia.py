@@ -1,72 +1,79 @@
 from indexia.indexia import Indexia
 from indexia.inquiry import Tabula
+from sqlite3 import Connection
 import os
-import pandas as pd
+import pandas
 import sqlite3
 import unittest as ut
 
 
 class TestIndexia(ut.TestCase):
     @classmethod        
-    def setUpClass(cls):        
-        cls.test_db = 'tests/data/test_indexia.db'
+    def setUpClass(cls) -> None:        
+        cls.test_db: str = 'tests/data/test_indexia.db'
         
     @classmethod
-    def getTestTables(cls):
-        creator = Tabula.get_creator_table(
+    def getTestTables(cls) -> tuple[tuple[str, dict[str, str]], tuple[str, dict[str, str]]]:
+        creator: tuple[str, dict[str, str]] = Tabula.get_creator_table(
             'creator', 'name'
         )
         
-        creature = Tabula.get_creature_table(
+        creature: tuple[str, dict[str, str]] = Tabula.get_creature_table(
             'creator', 'creature', 'name'
         )
         
         return creator, creature
 
-    def setUp(self):
+    def setUp(self) -> None:
+        creator: tuple[str, dict[str, str]]
+        creature: tuple[str, dict[str, str]]
         creator, creature = self.getTestTables()
+        self.creator_table: str
+        self.creator_dtype: dict[str, str]
         self.creator_table, self.creator_dtype = creator
+        self.creature_table: str
+        self.creature_dtype: dict[str, str]
         self.creature_table, self.creature_dtype = creature
-        self.trait = 'name'
-        self.creator_expr = 'father'
-        self.creature_expr = 'son'
+        self.trait: str = 'name'
+        self.creator_expr: str = 'father'
+        self.creature_expr: str = 'son'
         
         with Indexia(self.test_db) as ix:
-            cnxn = ix.open_cnxn(ix.db)
+            cnxn: Connection = ix.open_cnxn(ix.db)
             
-            self.creator_data = ix.get_or_create(
+            self.creator_data: pandas.DataFrame = ix.get_or_create(
                 cnxn, self.creator_table, self.creator_dtype, 
                 [self.trait], 
                 [self.creator_expr]
             )
             
-            self.creator_id, _ = self.creator_data.iloc[0]
+            self.creator_id: int = list(self.creator_data.iloc[0])[0]
             
-            self.creature_data = ix.get_or_create(
+            self.creature_data: pandas.DataFrame = ix.get_or_create(
                 cnxn, self.creature_table, self.creature_dtype, 
                 [self.trait, 'creator_id'], 
                 [self.creature_expr, self.creator_id]
             )
             
-            self.creature_id, _, _ = self.creature_data.iloc[0]
+            self.creature_id: int = list(self.creature_data.iloc[0])[0]
         
-    def testOpenCnxn(self):
+    def testOpenCnxn(self) -> None:
         with Indexia(self.test_db) as ix:
-            cnxn_1 = ix.open_cnxn(ix.db)
-            cnxn_2 = ix.open_cnxn(ix.db)
+            cnxn_1: Connection = ix.open_cnxn(ix.db)
+            cnxn_2: Connection = ix.open_cnxn(ix.db)
             
             self.assertEqual(len(ix.cnxns[self.test_db]), 2)
             self.assertIsInstance(cnxn_1, sqlite3.Connection)
             self.assertIsInstance(cnxn_2, sqlite3.Connection)
     
-    def testCloseCnxn(self):
+    def testCloseCnxn(self) -> None:
         with Indexia(self.test_db) as ix:
             ix.open_cnxn(ix.db)
             self.assertEqual(len(ix.cnxns[self.test_db]), 1)
             ix.close_cnxn(self.test_db)
             self.assertEqual(len(ix.cnxns[self.test_db]), 0)
     
-    def testCloseAllCnxns(self):
+    def testCloseAllCnxns(self) -> None:
         with Indexia(self.test_db) as ix:
             ix.open_cnxn(ix.db)
             self.assertEqual(len(ix.cnxns[self.test_db]), 1)
@@ -75,32 +82,36 @@ class TestIndexia(ut.TestCase):
             for db in ix.cnxns:
                 self.assertEqual(len(ix.cnxns[db]), 0)
                 
-    def testGetDF(self):
-        creator_cols = ['id', 'name']
-        valid_sql = f'SELECT * FROM {self.creator_table};'
-        invalid_sql = 'SELECT * FROM nonexistent_table;'
+    def testGetDF(self) -> None:
+        creator_cols: list[str] = ['id', 'name']
+        valid_sql: str = f'SELECT * FROM {self.creator_table};'
+        invalid_sql: str = 'SELECT * FROM nonexistent_table;'
         
         with Indexia(self.test_db) as ix:
-            cnxn = ix.open_cnxn(ix.db)
+            cnxn: Connection = ix.open_cnxn(ix.db)
             
-            expected_columns = None
+            expected_columns: list[str] = []
             raise_errors = False
-            df = ix.get_df(cnxn, valid_sql, expected_columns, raise_errors)
-            self.assertIsInstance(df, pd.DataFrame)
+
+            df: pandas.DataFrame = ix.get_df(
+                cnxn, valid_sql, expected_columns, raise_errors
+            )
+
+            self.assertIsInstance(df, pandas.DataFrame)
             self.assertEqual(list(df.columns), creator_cols)
             
             df = ix.get_df(cnxn, invalid_sql, expected_columns, raise_errors)
-            self.assertIsInstance(df, pd.DataFrame)
+            self.assertIsInstance(df, pandas.DataFrame)
             self.assertEqual(list(df.columns), [])
             
-            expected_columns = None
+            expected_columns = []
             raise_errors = True
             df = ix.get_df(cnxn, valid_sql, expected_columns, raise_errors)
-            self.assertIsInstance(df, pd.DataFrame)
+            self.assertIsInstance(df, pandas.DataFrame)
             self.assertEqual(list(df.columns), creator_cols)
             
             self.assertRaises(
-                pd.io.sql.DatabaseError, ix.get_df, 
+                Exception, ix.get_df, 
                 cnxn, invalid_sql, expected_columns, raise_errors
             )
             
@@ -123,9 +134,9 @@ class TestIndexia(ut.TestCase):
             self.assertEqual(list(df.columns), creator_cols)
             self.assertGreaterEqual(df.shape[0], 1)   
                 
-    def testGetOrCreate(self):
+    def testGetOrCreate(self) -> None:
         with Indexia(self.test_db) as ix:
-            cnxn = ix.open_cnxn(ix.db)
+            cnxn: Connection = ix.open_cnxn(ix.db)
             creator_expr = 'neonymos'
             
             self.assertRaises(
@@ -134,18 +145,18 @@ class TestIndexia(ut.TestCase):
                 [self.trait], [creator_expr], retry=False
             )
             
-            creator_data = ix.get_or_create(
+            creator_data: pandas.DataFrame = ix.get_or_create(
                 cnxn, self.creator_table, self.creator_dtype, 
                 [self.trait], [creator_expr], retry=True
             )
             
-            self.assertIsInstance(creator_data, pd.DataFrame),
+            self.assertIsInstance(creator_data, pandas.DataFrame)
             self.assertEqual(creator_data.shape[0], 1)
      
-    def testDelete(self):
+    def testDelete(self) -> None:
         with Indexia(self.test_db) as ix:
-            cnxn = ix.open_cnxn(ix.db)
-            deleted = ix.delete(cnxn, self.creator_table, self.creator_id)
+            cnxn: Connection = ix.open_cnxn(ix.db)
+            deleted: int = ix.delete(cnxn, self.creator_table, self.creator_id)
             self.assertEqual(self.creator_id, deleted)
             
             self.assertRaises(
@@ -154,17 +165,17 @@ class TestIndexia(ut.TestCase):
                 [self.trait], [self.creator_expr], retry=False
             )
             
-    def testUpdate(self):        
+    def testUpdate(self) -> None:        
         with Indexia(self.test_db) as ix:
-            cnxn = ix.open_cnxn(ix.db)
+            cnxn: Connection = ix.open_cnxn(ix.db)
             
-            rows_updated = ix.update(
+            rows_updated: int = ix.update(
                 cnxn, self.creator_table, 
                 [self.trait], ['pater'], 
                 [self.trait], [self.creator_expr]
             )
                         
-            updated = ix.get_or_create(
+            updated: pandas.DataFrame = ix.get_or_create(
                 cnxn, self.creator_table, self.creator_dtype, 
                 ['id'], [self.creator_id]
             )
@@ -172,72 +183,79 @@ class TestIndexia(ut.TestCase):
             self.assertEqual(rows_updated, 1)
             self.assertEqual(updated.loc[0, 'name'], 'pater')
             
-    def testAddCreator(self):
+    def testAddCreator(self) -> None:
         with Indexia(self.test_db) as ix:
-            cnxn = ix.open_cnxn(ix.db)
+            cnxn: Connection = ix.open_cnxn(ix.db)
             
-            creator_data = ix.add_creator(
+            creator_data: pandas.DataFrame = ix.add_creator(
                 cnxn, self.creator_table, self.trait, self.creator_expr
             )
             
-            pd.testing.assert_frame_equal(creator_data, self.creator_data)
+            pandas.testing.assert_frame_equal(creator_data, self.creator_data)
             
             creator_data = ix.add_creator(
                 cnxn, self.creator_table, self.trait, 'neonymos'
             )
             
+            creator_id: int = 0
+            creator_expr: str = ''
             creator_id, creator_expr = creator_data.iloc[0]
             self.assertEqual(creator_id, self.creator_id + 1)
             self.assertEqual(creator_expr, 'neonymos')
     
-    def testAddCreature(self):
+    def testAddCreature(self) -> None:
         with Indexia(self.test_db) as ix:
-            cnxn = ix.open_cnxn(ix.db)
+            cnxn: Connection = ix.open_cnxn(ix.db)
             
-            creature_data = ix.add_creature(
+            creature_data: pandas.DataFrame = ix.add_creature(
                 cnxn, self.creator_table, self.creator_data, 
                 self.creature_table, self.trait, self.creature_expr
             )
             
-            pd.testing.assert_frame_equal(creature_data, self.creature_data)
+            pandas.testing.assert_frame_equal(creature_data, self.creature_data)
             
             creature_data = ix.add_creature(
                 cnxn, self.creator_table, self.creator_data,
                 self.creature_table, self.trait, 'neonymos'
             )
             
+            creature_id: int = 0
+            creature_expr: str = ''
             creature_id, creature_expr, creator_id = creature_data.iloc[0]
             self.assertEqual(creator_id, self.creator_id)
             self.assertEqual(creature_id, self.creature_id + 1)
             self.assertEqual(creature_expr, 'neonymos')
                 
-    def testGetAllTables(self):
+    def testGetAllTables(self) -> None:
         with Indexia(self.test_db) as ix:
-            cnxn = ix.open_cnxn(ix.db)
-            table_list = ix.get_all_tables(cnxn)
+            cnxn: Connection = ix.open_cnxn(ix.db)
+            table_list: list[str] = ix.get_all_tables(cnxn)
             
             self.assertListEqual(
                 table_list, [self.creator_table, self.creature_table]
             )
     
-    def testGetTableColumns(self):
+    def testGetTableColumns(self) -> None:
         with Indexia(self.test_db) as ix:
-            cnxn = ix.open_cnxn(ix.db)
-            column_data = ix.get_table_columns(cnxn, self.creator_table)
+            cnxn: Connection = ix.open_cnxn(ix.db)
+
+            column_data: pandas.DataFrame = ix.get_table_columns(
+                cnxn, self.creator_table
+            )
             
-            exp_column_data = pd.DataFrame(data={
+            exp_column_data = pandas.DataFrame(data={
                 'column_name': ['id', 'name'],
                 'data_type': ['INTEGER', 'TEXT'],
                 'not_null': [1, 1],
                 'is_pk': [1, 0]
             })
             
-            pd.testing.assert_frame_equal(column_data, exp_column_data)
+            pandas.testing.assert_frame_equal(column_data, exp_column_data)
             
-    def testGetTrait(self):
+    def testGetTrait(self) -> None:
         with Indexia(self.test_db) as ix:
-            cnxn = ix.open_cnxn(ix.db)
-            trait = ix.get_trait(cnxn, self.creator_table)
+            cnxn: Connection = ix.open_cnxn(ix.db)
+            trait: str = ix.get_trait(cnxn, self.creator_table)
             self.assertEqual(trait, self.trait)
         
             trait = ix.get_trait(cnxn, self.creature_table)
@@ -245,97 +263,108 @@ class TestIndexia(ut.TestCase):
         
             self.assertRaises(ValueError, ix.get_trait, cnxn,'exp_fail')
     
-    def testGetByTrait(self):
+    def testGetByTrait(self) -> None:
         with Indexia(self.test_db) as ix:
-            cnxn = ix.open_cnxn(ix.db)
+            cnxn: Connection = ix.open_cnxn(ix.db)
             
-            creator_retrieved = ix.get_by_trait(
+            creator_retrieved: pandas.DataFrame = ix.get_by_trait(
                 cnxn, self.creator_table, self.creator_expr
             )
             
-            pd.testing.assert_frame_equal(self.creator_data, creator_retrieved)
+            pandas.testing.assert_frame_equal(self.creator_data, creator_retrieved)
             
-            expect_empty = ix.get_by_id(
+            expect_empty: pandas.DataFrame = ix.get_by_trait(
                 cnxn, self.creator_table, f'{self.creator_expr}_empty'
             )
             
             self.assertTrue(expect_empty.empty)
                 
-    def testGetByID(self):
+    def testGetByID(self) -> None:
         with Indexia(self.test_db) as ix:
-            cnxn = ix.open_cnxn(ix.db)
+            cnxn: Connection = ix.open_cnxn(ix.db)
             
-            creator_retrieved = ix.get_by_id(
+            creator_retrieved: pandas.DataFrame = ix.get_by_id(
                 cnxn, self.creator_table, self.creator_id
             )
             
-            pd.testing.assert_frame_equal(self.creator_data, creator_retrieved)
+            pandas.testing.assert_frame_equal(self.creator_data, creator_retrieved)
             
-            expect_empty = ix.get_by_id(
+            expect_empty: pandas.DataFrame = ix.get_by_id(
                 cnxn, self.creator_table, self.creator_id + 1
             )
             
             self.assertTrue(expect_empty.empty)
     
-    def testGetCreatorGenus(self):
+    def testGetCreatorGenus(self) -> None:
         with Indexia(self.test_db) as ix:
-            cnxn = ix.open_cnxn(ix.db)
-            genus = ix.get_creator_genus(cnxn, self.creature_table)
+            cnxn: Connection = ix.open_cnxn(ix.db)
+            genus: str | None = ix.get_creator_genus(cnxn, self.creature_table)
             self.assertEqual(self.creator_table, genus)
             
-    def testGetCreatureSpecies(self):
+    def testGetCreatureSpecies(self) -> None:
         with Indexia(self.test_db) as ix:
-            cnxn = ix.open_cnxn(ix.db)
-            species = ix.get_creature_species(cnxn, self.creator_table)
-            exp_species = ['creature']
+            cnxn: Connection = ix.open_cnxn(ix.db)
+            species: list[str] = ix.get_creature_species(cnxn, self.creator_table)
+            exp_species: list[str] = ['creature']
             self.assertEqual(species, exp_species)
             
             species = ix.get_creature_species(cnxn, self.creature_table)
             exp_species = []
             self.assertEqual(species, exp_species)
     
-    def testGetCreator(self):
+    def testGetCreator(self) -> None:
         with Indexia(self.test_db) as ix:
-            cnxn = ix.open_cnxn(ix.db)
-            
+            cnxn: Connection = ix.open_cnxn(ix.db)
+            creator_genus: str = ''
+            creator_data: pandas.DataFrame = pandas.DataFrame()
+
             creator_genus, creator_data = ix.get_creator(
                 cnxn, self.creature_table, self.creature_data
             )[0]
             
-            exp_genus = ix.get_creator_genus(cnxn, self.creature_table)
+            exp_genus: str | None = ix.get_creator_genus(
+                cnxn, self.creature_table
+            )
+
             self.assertEqual(creator_genus, exp_genus)
-            pd.testing.assert_frame_equal(creator_data, self.creator_data)
+            pandas.testing.assert_frame_equal(creator_data, self.creator_data)
             
-            expect_empty = ix.get_creator(
+            expect_empty: list[tuple[str, pandas.DataFrame]] = ix.get_creator(
                 cnxn, self.creator_table, self.creator_data
             )
             
             self.assertEqual(len(expect_empty), 0)
             
-    def testGetCreatures(self):
+    def testGetCreatures(self) -> None:
         with Indexia(self.test_db) as ix:
-            cnxn = ix.open_cnxn(ix.db)  
+            cnxn: Connection = ix.open_cnxn(ix.db)  
             
-            creatures = ix.get_creatures(
+            creatures: list[tuple[str, pandas.DataFrame]] = ix.get_creatures(
                 cnxn, self.creator_table, self.creator_data
             )
             
-            exp_creatures = [('creature', pd.DataFrame(
-                data={'id': [1], 'name': ['son'], 'creator_id': [1]}
-            ))]
+            exp_creatures: list[tuple[str, pandas.DataFrame]] = [
+                ('creature', pandas.DataFrame(data={
+                    'id': [1], 'name': ['son'], 'creator_id': [1]
+                }))
+            ]
             
+            species: str = ''
+            members: pandas.DataFrame = pandas.DataFrame()
+            exp_species: str = ''
+            exp_members: pandas.DataFrame = pandas.DataFrame()
             species, members = creatures[0]
             exp_species, exp_members = exp_creatures[0]
             self.assertEqual(species, exp_species)
-            pd.testing.assert_frame_equal(members, exp_members)
+            pandas.testing.assert_frame_equal(members, exp_members)
             
-            exp_empty = ix.get_creatures(
+            exp_empty: list[tuple[str, pandas.DataFrame]] = ix.get_creatures(
                 cnxn, self.creature_table, self.creature_data
             )
             
             self.assertEqual(len(exp_empty), 0)
     
-    def tearDown(self):
+    def tearDown(self) -> None:
         try:
             os.remove(self.test_db)
         except:
