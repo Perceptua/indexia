@@ -25,6 +25,14 @@ indexia.inquiry module
    :undoc-members:
    :show-inheritance:
 
+indexia.pylai module
+----------------------
+
+.. automodule:: indexia.pylai
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 indexia.schemata module
 -----------------------
 

@@ -1,6 +1,6 @@
 """Manages indexia data entry."""
 
-from Pillow import Image
+from PIL import Image
 import pytesseract
 
 class Grammascope:
